@@ -8,72 +8,142 @@ struct CompileResult {
     uint8_t* bytesArray;
 };
 
-void Compile(Text* text, const char* outName = "b.txt");
-bool ValidateDigitArg(String* string);
+struct Command {
+    const char* name;
+    uint32_t length;
+    uint32_t number;
+};
 
-int main() {
-    Text input;
-    ReadTextFromFile(&input, "input.txt");
-    MakeStrings(&input);
-    ProcessStrings(&input);
+const uint32_t ARGUMENT_SIZE = 4; //size of each argument in bytes
+const uint32_t MAX_ARGUMENT_AMOUNT = 4;
+const uint32_t COMMANDS_AMOUNT = 9;
+const Command allCommands[9] = 
+{{"push", 4, 1}, {"pop", 3, 4}, {"add", 3, 8}, {"sub", 3, 12}, {"mul", 3, 16}, {"div", 3, 20}, {"out", 3, 24}, {"dmp", 3, 28}, {"hlt", 3, 32}};
 
-    printf("%d\n", (unsigned char)128);;
+const uint8_t PUSH_LEN = 4;
 
-    Compile(&input);
+char* ReadOutArgument(int32_t* argc, char *argv[]);
+void Compile(Text* text, const char* outName);
+bool ValidateDigitArgs(String* string, uint32_t argAmount, uint32_t** argIdxs);
+bool ProcessCommands(const Command* curCommand, String* curString, CompileResult* output);
+
+int main(int argc, char** argv) {
+    char* outputFile = ReadOutArgument(&argc, argv);
+
+    for (uint32_t curArgument = 1; curArgument < argc; curArgument++) {
+        Text input = {};
+        
+        ReadTextFromFile(&input, argv[curArgument]);
+        MakeStrings(&input);
+        ProcessStrings(&input);
+        Compile(&input, outputFile);
+    }
 
     printf("OK");
     return 0;
 }
 
-void Compile(Text* text, const char* outName) {
-    CompileResult output = {};
-    output.bytesCount = 0;
-    output.bytesArray = (uint8_t*)calloc(text->bufSize, sizeof(output.bytesArray[0]));
+char* ReadOutArgument(int32_t* argc, char *argv[]) {
+	assert(argc != nullptr);
+	assert(argv != nullptr);
 
-    uint8_t* operationName = 0;
-    int32_t operationArg = 0;
+    char* outputFile = 0;
 
-    for(size_t curString = 0; curString < text->strAmount; curString++) {
-        String comparingString = text->strings[curString];
+    for (uint32_t curArgument = 1; curArgument < *argc; curArgument++) {
+        if (!strcmp(argv[curArgument], "-o")) {
+            outputFile = argv[curArgument + 1];
+            *argc = curArgument;
 
-        printf("%d %d\n", comparingString.length, comparingString.firstSpaceIdx);
-
-        if ((comparingString.firstSpaceIdx == 4 | comparingString.length == 5) 
-        & !MyStrCmp((const int8_t*)comparingString.value, (const int8_t*)"push")) {
-            if(ValidateDigitArg(&comparingString)) {
-                operationArg = atoi((const char*)(comparingString.value + 6)); //! 6 is the length of word "push"
-
-                *(output.bytesArray + output.bytesCount) = (uint8_t)1;
-                *(uint32_t*)(output.bytesArray + output.bytesCount + 1) = operationArg;
-
-                output.bytesCount += 1 + 1*4; //1 command takes 1 byte, 1 argument takes 4 bytes       
-            }
-            else {
-                printf("UNVALID ARGUMENT OF PUSH ON %d LINE\n", curString + 1);
-                abort();
-            }
-        }
-        else {
-            printf("UNKNOWN OPERATION ON %d LINE\n", curString + 1);
-            abort();
+            return outputFile;
         }
     }
+
+    return (char*)"b.txt";
 }
 
-bool ValidateDigitArg(String* string) {
-    if (string->firstSpaceIdx == 0 | string->length - 2 == string->firstSpaceIdx) {
+void Compile(Text* text, const char* outName) {
+    assert(text    != nullptr);
+    assert(outName != nullptr);
+
+    CompileResult output = {0, (uint8_t*)calloc(text->bufSize + 4, sizeof(output.bytesArray[0]))};
+
+    for(size_t curString = 0; curString < text->strAmount; curString++) {        
+        for (size_t curCommand = 0; curCommand < COMMANDS_AMOUNT; curCommand++) {
+            if (ProcessCommands(&allCommands[curCommand], &text->strings[curString], &output))
+                break;
+
+            if (curCommand == COMMANDS_AMOUNT - 1) {
+                printf("INVALID COMMANDS IN %d LINE\n", curString + 1);
+            }
+        }   
+    }
+
+    int outputd = open(outName, O_WRONLY | O_BINARY | O_CREAT);
+    printf("I wrote 4 signature bytes in %s\n",  write(outputd, "DAIN", 4), outName);
+    printf("I wrote %d bytes from array in %s\n", write(outputd, output.bytesArray, output.bytesCount), outName);
+
+    close(outputd);
+    free(output.bytesArray);
+}
+
+bool ValidateDigitArgs(String* string, uint32_t argAmount, uint32_t** argIdxs) {
+    if(argAmount == 0) {
+        return 1;
+    }
+
+    if (string->firstSpaceIdx == 0) {
         return 0;
     }
 
-    for(size_t curChar = string->firstSpaceIdx + 1; curChar < string->length; curChar++) {
+    bool spaceFlag = 0;
+    uint32_t spacesAmount = 0;
+
+    for(size_t curChar = string->firstSpaceIdx; curChar < string->length; curChar++) {
         if (string->value[curChar] != '\0') {
-            if (!isdigit(string->value[curChar])) {
-                return 0;
+            if (string->value[curChar] == ' ') {
+                spaceFlag = 1;
+            }
+            else if (spaceFlag) {
+                (*argIdxs)[spacesAmount++] = curChar;
+                spaceFlag = 0;
+
+                if (!isdigit(string->value[curChar])) {
+                    return 0;
+                }
             }
         }
         else {
             break;
         }
     }
+
+    if (spacesAmount != argAmount)
+        return 0;
     return 1;
+}
+bool ProcessCommands(const Command* curCommand, String* curString, CompileResult* output) {
+    int32_t operationArg = 0;
+
+    if ((curString->firstSpaceIdx == curCommand->length | curString->length - 1 == curCommand->length)
+        & !MyStrCmp((const int8_t*)curString->value, (const int8_t*)curCommand->name)) {
+        uint32_t* argIdxs = (uint32_t*)calloc(MAX_ARGUMENT_AMOUNT, sizeof(argIdxs[0]));
+               
+        if(ValidateDigitArgs(curString, curCommand->number % 4, &argIdxs)) {
+            printf("Command name%s\n", curCommand->name);
+
+            *(output->bytesArray + output->bytesCount) = (uint8_t)curCommand->number;
+            output->bytesCount += 1;
+            
+            for (uint32_t curArg = 0; curArg < curCommand->number % 4; curArg++) {
+                operationArg = atoi((const char*)(curString->value + argIdxs[curArg]));
+                *(uint32_t*)(output->bytesArray + output->bytesCount) = operationArg;
+
+                output->bytesCount += ARGUMENT_SIZE;
+            }
+
+            return 1;   
+        }
+    }
+
+    return 0;
 }

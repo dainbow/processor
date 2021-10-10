@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <io.h>
 #include <string.h>
-#include <sys\stat.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "Text.h"
 #include "Utilities.h"
@@ -46,7 +48,7 @@ void FillStrings(struct Text *text) {
     for (size_t curStrBuf = 1, curStrIdx = 1; curStrBuf < text->bufSize; curStrBuf++) {
         if (text->buffer[curStrBuf - 1] == '\n') {
             text->strings[curStrIdx].firstSpaceIdx = 0;
-            
+
             text->strings[curStrIdx].value = &text->buffer[curStrBuf];
             text->strings[curStrIdx - 1].length = text->strings[curStrIdx].value - text->strings[curStrIdx - 1].value - 1;
 
@@ -57,8 +59,10 @@ void FillStrings(struct Text *text) {
 }
 
 void ProcessStrings(Text* text) { //TODO IGNORE MULTIPLY SPACES AND SPACES IN THE BEGGINING OF STRINGS, SKIP COMMENTS IN THE MIDDLE OF STRINGS
+    uint32_t lastStrNotSpace = 0;
+
     for (size_t curString = 0; curString < text->strAmount; curString++) {
-        for (size_t curChar = 0; curChar < text->strings[curString].length; curChar++) {
+        for (size_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             switch (text->strings[curString].value[curChar])
             {
             case '\r':
@@ -67,10 +71,26 @@ void ProcessStrings(Text* text) { //TODO IGNORE MULTIPLY SPACES AND SPACES IN TH
                 text->strings[curString].value[curChar] = '\0';
                 break;
             case ' ':
-                text->strings[curString].firstSpaceIdx = curChar;
                 break;    
             default:
+                lastStrNotSpace = curChar;
                 break;
+            }
+        }
+
+        for (size_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
+            if (text->strings[curString].value[0] == ' ') {
+                text->strings[curString].value++;
+                text->strings[curString].length--;
+
+                curChar = 0;
+            }
+
+            if (text->strings[curString].value[curChar] == ' ') {
+                if (text->strings[curString].firstSpaceIdx == 0)
+                    text->strings[curString].firstSpaceIdx = curChar;
+                if (curChar > lastStrNotSpace)
+                    text->strings[curString].value[curChar] = '\0';
             }
         }
     }
