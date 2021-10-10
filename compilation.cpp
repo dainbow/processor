@@ -17,8 +17,10 @@ struct Command {
 const uint32_t ARGUMENT_SIZE = 4; //size of each argument in bytes
 const uint32_t MAX_ARGUMENT_AMOUNT = 4;
 const uint32_t COMMANDS_AMOUNT = 9;
+const uint32_t ACCURACY = 3;
+
 const Command allCommands[9] = 
-{{"push", 4, 1}, {"pop", 3, 4}, {"add", 3, 8}, {"sub", 3, 12}, {"mul", 3, 16}, {"div", 3, 20}, {"out", 3, 24}, {"dmp", 3, 28}, {"hlt", 3, 32}};
+{{"push", 4, 1}, {"pop", 3, 4}, {"add", 3, 8}, {"sub", 3, 12}, {"mul", 3, 16}, {"div", 3, 20}, {"out", 3, 24}, {"dmp", 3, 28}, {"hlt", 3, 0}};
 
 const uint8_t PUSH_LEN = 4;
 
@@ -58,7 +60,7 @@ char* ReadOutArgument(int32_t* argc, char *argv[]) {
         }
     }
 
-    return (char*)"b.txt";
+    return "b.txt";
 }
 
 void Compile(Text* text, const char* outName) {
@@ -79,8 +81,8 @@ void Compile(Text* text, const char* outName) {
     }
 
     int outputd = open(outName, O_WRONLY | O_BINARY | O_CREAT);
-    printf("I wrote 4 signature bytes in %s\n",  write(outputd, "DAIN", 4), outName);
-    printf("I wrote %d bytes from array in %s\n", write(outputd, output.bytesArray, output.bytesCount), outName);
+    printf("I wrote 4 signature bytes\n",  write(outputd, "DAIN", 4));
+    printf("I wrote %d bytes from array\n", write(outputd, output.bytesArray, output.bytesCount));
 
     close(outputd);
     free(output.bytesArray);
@@ -135,7 +137,7 @@ bool ProcessCommands(const Command* curCommand, String* curString, CompileResult
             output->bytesCount += 1;
             
             for (uint32_t curArg = 0; curArg < curCommand->number % 4; curArg++) {
-                operationArg = atoi((const char*)(curString->value + argIdxs[curArg]));
+                operationArg = (int32_t)(ACCURACY * atof((const char*)(curString->value + argIdxs[curArg])));
                 *(uint32_t*)(output->bytesArray + output->bytesCount) = operationArg;
 
                 output->bytesCount += ARGUMENT_SIZE;

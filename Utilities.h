@@ -29,7 +29,7 @@ bool IsCyrillic(const uint16_t sym);
 
 int MyFPuts(const uint8_t *str, FILE *stream);
 
-bool MyStrCmp(const int8_t* str1, const int8_t* str2);
+bool MyStrCmp(const int8_t*  str1, const int8_t* str2);
 
 //-------------------------------------------------------------------------------------------------------
 //! Counts size of file
