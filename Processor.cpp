@@ -1,86 +1,37 @@
-#include <io.h>
-#include <fcntl.h>
-
-#include "stack.h"
-#include "Utilities.h"
-
-const uint32_t SIGNATURE_SIZE = 4;
-
-char* ReadCommands(char* inputFile);
-void ExecuteCommands(char* commands, Stack* stack);
+#include "commands.h"
+#include "Processor.h"
 
 int main(int argc, char* argv[]) {
     StackCtor(procStack);
 
-    char* commands = ReadCommands(argv[1]);
-    ExecuteCommands(commands, &procStack);
-
-
+    Text commands = {};
+    ReadCommands(argc, argv, &commands);
+    ExecuteCommands(&commands, &procStack);
 
     printf("OK\n");
 }
 
-char* ReadCommands(char* inputFile) {
-    assert(inputFile != nullptr);
+void ReadCommands(int argc, char* argv[], Text* text) {
+    assert(argc > 1);
 
-    int inputd = open(inputFile, O_BINARY | O_RDONLY);  
-    char* commands = (char*)calloc(CountFileSize(inputd), sizeof(commands[0]));
-
-    printf("I read %d bytes from %s\n", read(inputd, commands, CountFileSize(inputd)), inputFile);
-    
-    return commands;
+    ReadTextFromFile(text, argv[1]);
 }
 
-void ExecuteCommands(char* commands, Stack* stack) {
+void ExecuteCommands(Text* commands, Stack* stack) {
     assert(commands != nullptr);
 
     uint32_t commandPointer = SIGNATURE_SIZE;
 
-    while(commands[commandPointer] != 0) {
-        switch(commands[commandPointer]) { //TODO Ебануть красивый дефайн, используя вынесенный в хедер массив инструкций  из компиляции
-            case 1:
-                StackPush(stack, *(int32_t*)(&commands[commandPointer] + 1));
+    while(commands->buffer[commandPointer] != 0) {
+        switch(commands->buffer[commandPointer]) {
+            #include "cmd_def.h"
 
-                commandPointer += 5;
-                break;
-            case 4:
-                StackPop(stack);
-
-                commandPointer += 1;
-                break;
-            case 8:
-                StackAdd(stack);
-
-                commandPointer += 1;
-                break;
-            case 12:
-                StackSub(stack);
-
-                commandPointer += 1;
-                break;
-            case 16:
-                StackMul(stack);
-
-                commandPointer += 1;
-                break;
-            case 20:
-                StackDiv(stack);
-
-                commandPointer += 1;
-                break;
-            case 24:
-                StackOut(stack);
-
-                commandPointer += 1;
-                break;
-            case 28:
-                StackDump(stack LOCATION()); //TODO Сделать красивый дамп массива
-
-                commandPointer += 1;
-                break;
             default:
-                printf("UNKNOW INSTRUCTION\n");
+                printf("UNKNOWN COMMAND %d ON %u POINTER PLACE\n", commands->buffer[commandPointer], commandPointer);
+                abort();
                 break;
         }
     }
+
+    #undef DEF_CMD_
 }

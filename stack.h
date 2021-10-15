@@ -1,11 +1,12 @@
-#ifndef _STACK_H_
-#define _STACK_H_
+#pragma once
 
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "commands.h"
 
 #define LOW_LEVEL  1
 #define MID_LEVEL  2
@@ -63,7 +64,6 @@ const uint32_t HASH_BASE = 257;
 
 const float INCREASE_MULTIPLIER = 1.5;
 const float DECREASE_MULTIPLIER = 2;
-const uint32_t ACCURACY = 3;
 
 enum StackError {
     NO_ERROR = 0,
@@ -332,4 +332,5 @@ void StackMul(Stack* stack);
 void StackDiv(Stack* stack);
 
 void StackOut(Stack* stack);
-#endif
+
+void StackExeDump(uint8_t* buffer, uint32_t bufSize, uint32_t comPtr);

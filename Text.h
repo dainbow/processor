@@ -10,14 +10,14 @@
 struct String {
     uint8_t *value;
     size_t length;
-    size_t firstSpaceIdx;
+    uint32_t firstSpaceIdx;
 };
 
 struct Text {
     struct String *strings;
     uint8_t *buffer;
     size_t bufSize;
-    size_t strAmount;
+    uint32_t strAmount;
 };
 
 //-------------------------------------------------------------------------------------------------------

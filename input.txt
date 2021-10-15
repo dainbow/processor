@@ -1,8 +1,7 @@
-push 10
+push 10.5
 push 20
+exeDump
+dump
 add
-push 10
-mul
-push 12
-push 1
+out
 hlt

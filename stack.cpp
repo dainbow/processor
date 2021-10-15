@@ -191,8 +191,8 @@ void WriteAllStackHash(Stack* stack) {
 int StackDump(Stack* stack, VarInfo dumpInfo, FILE* outstream) {
     setvbuf(outstream, NULL, _IONBF, 0);
 
-    fprintf(outstream, "Dump from %s() at %s(%d) in stack called now \"%s\": IsStackOk() FAILED\n",
-            dumpInfo.function, dumpInfo.file, dumpInfo.line, dumpInfo.name);
+    fprintf(outstream, "Dump from %s() at %s(%d) in stack called now \"%s\": IsAllOk() %s\n",
+            dumpInfo.function, dumpInfo.file, dumpInfo.line, dumpInfo.name, IsAllOk(stack) == NO_ERROR ? "Ok" : "FAILED");
 
     fprintf(outstream, "stack <int> [%p] (ok) \"%s\" ",
             &stack, stack->creationInfo.name);
@@ -383,6 +383,7 @@ void StackAdd(Stack* stack) {
     int32_t firstSummand  = StackPop(stack);
     int32_t secondSummand = StackPop(stack); 
 
+    printf("Pushed add result %d\n", firstSummand + secondSummand);
     StackPush(stack, firstSummand + secondSummand);
 }
 
@@ -415,8 +416,25 @@ void StackDiv(Stack* stack) {
 
 void StackOut(Stack* stack) {
     CheckAllStack(stack);
+    printf("IN OUT\n");
 
-    for (uint32_t curIdx = stack->size; curIdx > 0; curIdx--) {
-        printf("[%d]: %d\n", curIdx, StackPop(stack) / ACCURACY);
+    for (int32_t curIdx = stack->size; curIdx > 0; curIdx--) {
+        float printOut = (float)StackPop(stack);
+        printOut /= ACCURACY;
+
+        printf("[%u]: %f\n", curIdx, printOut);
     }
+}
+
+void StackExeDump(uint8_t* buffer, uint32_t bufSize, uint32_t comPtr) {
+    int32_t printCount = 0;
+
+    for (uint32_t curByte = 0; curByte < bufSize; curByte++) {
+        if (curByte < comPtr)
+            printCount += printf("%d " ,buffer[curByte]);
+        else
+            printf("%d " ,buffer[curByte]);     
+    }
+    printf("\n");
+    printf("%*s!^!\n", printCount - 1, "");
 }

@@ -19,7 +19,7 @@ void ReadTextFromFile(struct Text *text, const char* inputFile) {
     text->buffer = (uint8_t*)calloc(text->bufSize + 1, sizeof(text->buffer[0]));
     assert(text->buffer != nullptr);
 
-    read(input, text->buffer, text->bufSize);
+    read(input, text->buffer, (uint32_t)text->bufSize);
 
     close(input);
 }
@@ -27,9 +27,9 @@ void ReadTextFromFile(struct Text *text, const char* inputFile) {
 void CountStrAmount(struct Text *text) {
     assert(text != nullptr);
 
-    size_t strCount = 0;
+    uint32_t strCount = 0;
 
-    for (size_t curChr = 0; curChr < (text->bufSize); curChr++) {
+    for (uint32_t curChr = 0; curChr < (text->bufSize); curChr++) {
         if (text->buffer[curChr] == '\n') {
             strCount++;
         }
@@ -58,11 +58,11 @@ void FillStrings(struct Text *text) {
     text->strings[text->strAmount - 1].length = &text->buffer[text->bufSize] - text->strings[text->strAmount - 1].value - 1;
 }
 
-void ProcessStrings(Text* text) { //TODO IGNORE MULTIPLY SPACES AND SPACES IN THE BEGGINING OF STRINGS, SKIP COMMENTS IN THE MIDDLE OF STRINGS
+void ProcessStrings(Text* text) { //TODO SKIP COMMENTS IN THE MIDDLE OF STRINGS
     uint32_t lastStrNotSpace = 0;
 
     for (size_t curString = 0; curString < text->strAmount; curString++) {
-        for (size_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
+        for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             switch (text->strings[curString].value[curChar])
             {
             case '\r':
@@ -78,7 +78,7 @@ void ProcessStrings(Text* text) { //TODO IGNORE MULTIPLY SPACES AND SPACES IN TH
             }
         }
 
-        for (size_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
+        for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             if (text->strings[curString].value[0] == ' ') {
                 text->strings[curString].value++;
                 text->strings[curString].length--;
