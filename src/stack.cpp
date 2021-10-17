@@ -422,11 +422,11 @@ void StackOut(Stack* stack) {
         float printOut = (float)StackPop(stack);
         printOut /= ACCURACY;
 
-        printf("[%u]: %f\n", curIdx, printOut);
+        printf("[%d]: %f\n", curIdx, printOut);
     }
 }
 
-void StackExeDump(uint8_t* buffer, uint32_t bufSize, uint32_t comPtr) {
+void StackExeDump(uint8_t* buffer, uint64_t bufSize, uint32_t comPtr) {
     int32_t printCount = 0;
 
     for (uint32_t curByte = 0; curByte < bufSize; curByte++) {

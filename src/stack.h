@@ -333,4 +333,4 @@ void StackDiv(Stack* stack);
 
 void StackOut(Stack* stack);
 
-void StackExeDump(uint8_t* buffer, uint32_t bufSize, uint32_t comPtr);
+void StackExeDump(uint8_t* buffer, uint64_t bufSize, uint32_t comPtr);
