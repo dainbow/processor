@@ -1,27 +1,41 @@
 #include "Compilation.h"
 
-#define DEF_CMD_(cmdName, cmdNum, ...)                                                                                  \
+#define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, ...)                                                                    \
 if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length == strlen(#cmdName)))                    \
 & !MyStrCmp((const int8_t*)currentString.value, (const int8_t*)#cmdName)) {                                             \
-    uint32_t* argIdxs = (uint32_t*)calloc(MAX_ARGUMENT_AMOUNT, sizeof(argIdxs[0]));     \
-    printf("Command name: %s.\n", #cmdName);                                  \
+    uint32_t* argIdxs = (uint32_t*)calloc(MAX_ARGUMENT_AMOUNT, sizeof(argIdxs[0]));                                     \
+    printf("Command name: %s.\n", #cmdName);                                                                            \
                                                                                                                         \
+    *(output.bytesArray + output.bytesCount) = (uint8_t)cmdNum;                                                         \
+    output.bytesCount += 1;                                                                                             \
     if(cmdNum % 4) {                                                                                                    \
-        ParseArgs(&currentString, &comArgs);                                                                            \
+        comArgs.argFlags.bytes |= LABEL_FLAG;                                                                           \
                                                                                                                         \
-        *(output.bytesArray + output.bytesCount) = (uint8_t)cmdNum;                                                     \
-        output.bytesCount += 1;                                                                                         \
-        printf("Bytes: %u\n", comArgs.argFlags.bytes);                                                                           \
+        ParseArgs(&currentString, &comArgs, !(cmdArgFilter));                                                           \
+        printf("Arg is %d\nReg is %d\nIs to RAM? %d\nLabel is %s\n", comArgs.argConst, comArgs.argReg, comArgs.argFlags.bytes & MEM_FLAG, (comArgs.argFlags.bytes & LABEL_FLAG) ? comArgs.labelName : "0");        \
+        if (cmdArgFilter) {                                                                                             \
+            printf("UNCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                \
+            abort();                                                                                                    \
+        }                                                                                                               \
+                                                                                                                        \
+        printf("Bytes: %u\n", comArgs.argFlags.bytes);                                                                  \
                                                                                                                         \
         for (uint32_t curArg = 0; curArg < cmdNum % 4; curArg++) {                                                      \
-            printf("Arg is %d\nReg is %d\nIs to RAM? %d\nLabel is %s\n", comArgs.argConst, comArgs.argReg, comArgs.argFlags.bytes & MEM_FLAG, (comArgs.argFlags.bytes & LABEL_FLAG) ? comArgs.labelName : "0");            \
-            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << 5 | comArgs.argReg);                    \
+            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << 4 | comArgs.argReg);         \
             output.bytesCount += BYTE_OF_ARGS;                                                                          \
-            *(uint32_t*)(output.bytesArray + output.bytesCount) = comArgs.argConst;                                     \
-            output.bytesCount += ARGUMENT_SIZE;                                                                         \
+                                                                                                                        \
+            if (comArgs.argFlags.bytes & CONST_FLAG) {                                                                  \
+                *(uint32_t*)(output.bytesArray + output.bytesCount) = comArgs.argConst;                                 \
+                output.bytesCount += ARGUMENT_SIZE;                                                                     \
+            }                                                                                                           \
+                                                                                                                        \
+            if (comArgs.argFlags.bytes & LABEL_FLAG) {                                                                  \
+                *(uint32_t*)(output.bytesArray + output.bytesCount) = FindLabel(comArgs.labelName, &labels);            \
+                output.bytesCount += ARGUMENT_SIZE;                                                                     \
             }                                                                                                           \
         }                                                                                                               \
     }                                                                                                                   \
+}                                                                                                                       \
 else                                                                                                               
   
 
@@ -67,14 +81,16 @@ void Compile(Text* text, const char* outName) {
     assert(text    != nullptr);
     assert(outName != nullptr);
 
+    static uint32_t NUM_OF_COMPILING = 1;
+
     CompileResult output = {0, (uint8_t*)calloc(text->bufSize + 4, sizeof(output.bytesArray[0]))};
+    static Labels labels = {};
 
     for(uint32_t curString = 0; curString < text->strAmount; curString++) {  
         Arguments comArgs = {};
         String currentString = text->strings[curString];
 
         printf("Curstring length is %llu\n", currentString.length);
-        Labels labels = {};
 
         if (IfLabel(&currentString, &labels, output.bytesCount) != 1) {
         #include "cmd_def.h"
@@ -89,15 +105,18 @@ void Compile(Text* text, const char* outName) {
 
     fclose(outputd);
     free(output.bytesArray);
+    NUM_OF_COMPILING++;
 }
 
-void ParseArgs(String* string, Arguments* comArg) {
+void ParseArgs(String* string, Arguments* comArg, bool isLabel) {
     size_t sumLenArgs = 0;
+    comArg->argFlags.bytes = 0;
+
     const char* ptrToArgs = ShiftAndCheckArgs(string);
 
-    ParseLabel(ptrToArgs, comArg, &sumLenArgs);
-
-    if (!(comArg->argFlags.bytes & LABEL_FLAG)) {
+    if (isLabel)
+        ParseLabel(ptrToArgs, comArg, &sumLenArgs);
+    else {
         ParseBrackets(   ptrToArgs, comArg, &sumLenArgs);
         ParseRegister(   ptrToArgs, comArg, &sumLenArgs);
         ParseConst(      ptrToArgs, comArg, &sumLenArgs);
@@ -208,12 +227,12 @@ void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenAr
 }
 
 void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-
-    if (sscanf(ptrToArgs, "%*1[ ]%[a-zA-Z0-9]", comArg->labelName) == 1) {
-        
+    if (sscanf(ptrToArgs, "%*1[ ]%[a-zA-Z0-9]", comArg->labelName) == 1) {  
         *sumLenArgs += strlen(comArg->labelName);
-        printf("FOUND LABEL \"%s\"", comArg->labelName);
         comArg->argFlags.bytes |= LABEL_FLAG;
+    }
+    else {
+        assert(FAIL && "LABEL NOT FOUND");
     }
 }
 
@@ -228,7 +247,7 @@ const char* ShiftAndCheckArgs(String* string) {
     return ptrToArgs;
 }
 
-bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {
+bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
     char trashLetters[100] = "";
     char labelName[MAX_LABEL_NAME] = "";
 
@@ -237,7 +256,8 @@ bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {
             printf("Found label\n");
             if (labels->curLbl < MAX_LABEL_AMOUNT) {
                 strcpy(labels->array[labels->curLbl].name, labelName);
-                labels->array[labels->curLbl++].go = curCommandPointer + 1;
+                labels->array[labels->curLbl].go = curCommandPointer;
+                labels->curLbl++;
 
                 printf("%u label name is \"%s\"\n", labels->curLbl, labels->array[labels->curLbl - 1].name);
 
@@ -253,5 +273,16 @@ bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {
         }
     }
 
+    return 0;
+}
+
+int32_t FindLabel(char lblName[], Labels* labels) {
+    for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
+        if(strcmp(lblName, labels->array[curLbl].name) == 0) {
+            return labels->array[curLbl].go;
+        }
+    }
+
+    assert(FAIL && "LABEL NOT FOUND");
     return 0;
 }

@@ -13,7 +13,7 @@ compiler.exe: $(BinDir)/compilation.o $(BinDir)/Text.o $(BinDir)/Utilities.o
 processor.exe: $(BinDir)/Processor.o $(BinDir)/Text.o $(BinDir)/Utilities.o $(BinDir)/Stack.o
 	g++ $(BinDir)/Processor.o $(BinDir)/Text.o $(BinDir)/Utilities.o $(BinDir)/Stack.o -o processor.exe
 
-$(BinDir)/compilation.o: $(SrcDir)/compilation.cpp $(SrcDir)/Compilation.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/commands.h
+$(BinDir)/compilation.o: $(SrcDir)/compilation.cpp $(SrcDir)/Compilation.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/commands.h $(SrcDir)/cmd_def.h
 	g++ -c $(SrcDir)/compilation.cpp -o $(BinDir)/compilation.o $(CXXFLAGS)
 
 $(BinDir)/Text.o: $(SrcDir)/Text.cpp $(SrcDir)/Text.h $(SrcDir)/Utilities.h

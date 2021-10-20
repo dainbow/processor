@@ -1,2 +1,5 @@
+push 4
+push 13
 next:
-push next
+add
+jump next

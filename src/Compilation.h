@@ -11,7 +11,7 @@ const uint32_t MAX_LABEL_AMOUNT = 70;
 const uint32_t BYTE_OF_ARGS = 1;
 
 struct CompileResult {
-    size_t bytesCount;
+    int32_t bytesCount;
     uint8_t* bytesArray;
 };
 
@@ -34,7 +34,7 @@ struct Arguments {
 
 struct Label {
     char name[MAX_LABEL_NAME];
-    size_t go;
+    int32_t go = -1;
 };
 
 struct Labels {
@@ -51,7 +51,7 @@ const int32_t LABEL_FLAG = 1 << 3;
 
 void ReadOutArgument(int32_t* argc, char *argv[], char** outputFile);
 void Compile(Text* text, const char* outName);
-void ParseArgs(String* string, Arguments* comArg);
+void ParseArgs(String* string, Arguments* comArg, bool isLabel);
 bool ProcessCommands(const Command* curCommand, String* curString, CompileResult* output);
 
 void ParseBrackets(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
@@ -62,4 +62,5 @@ void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 
 const char* ShiftAndCheckArgs(String* string);
 
-bool IfLabel(String* string, Labels* labels, size_t curCommandPointer);
+bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer);
+int32_t FindLabel(char lblName[], Labels* labels);
