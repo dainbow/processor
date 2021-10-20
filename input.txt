@@ -1,7 +1,2 @@
-push 10.5
-push 20
-exeDump
-dump
-add
-out
-hlt
+next:
+push next

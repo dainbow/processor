@@ -10,7 +10,10 @@
 struct String {
     uint8_t *value;
     size_t length;
+
     uint32_t firstSpaceIdx;
+    uint32_t lastSpaceBeforeArgs;
+    size_t lenOfArgs;
 };
 
 struct Text {

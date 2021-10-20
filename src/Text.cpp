@@ -48,6 +48,7 @@ void FillStrings(struct Text *text) {
     for (size_t curStrBuf = 1, curStrIdx = 1; curStrBuf < text->bufSize; curStrBuf++) {
         if (text->buffer[curStrBuf - 1] == '\n') {
             text->strings[curStrIdx].firstSpaceIdx = 0;
+            text->strings[curStrIdx].lastSpaceBeforeArgs = 0;
 
             text->strings[curStrIdx].value = &text->buffer[curStrBuf];
             text->strings[curStrIdx - 1].length = text->strings[curStrIdx].value - text->strings[curStrIdx - 1].value - 1;
@@ -58,17 +59,19 @@ void FillStrings(struct Text *text) {
     text->strings[text->strAmount - 1].length = &text->buffer[text->bufSize] - text->strings[text->strAmount - 1].value - 1;
 }
 
-void ProcessStrings(Text* text) { //TODO SKIP COMMENTS IN THE MIDDLE OF STRINGS
-    uint32_t lastStrNotSpace = 0;
+void ProcessStrings(Text* text) {
+    int32_t lastStrNotSpace = 0;
 
     for (size_t curString = 0; curString < text->strAmount; curString++) {
         for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             switch (text->strings[curString].value[curChar])
             {
+            case ';':
+                text->strings[curString].length = curChar + 1;
             case '\r':
             case '\n':
-            case ';':
                 text->strings[curString].value[curChar] = '\0';
+                text->strings[curString].value[curChar + 1] = '\0';
                 break;
             case ' ':
                 break;    
@@ -80,18 +83,28 @@ void ProcessStrings(Text* text) { //TODO SKIP COMMENTS IN THE MIDDLE OF STRINGS
 
         for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             if (text->strings[curString].value[0] == ' ') {
+                text->strings[curString].value[0] = '\0';
                 text->strings[curString].value++;
                 text->strings[curString].length--;
+                lastStrNotSpace--;
 
                 curChar = 0;
             }
-
-            if (text->strings[curString].value[curChar] == ' ') {
+            else if (text->strings[curString].value[curChar] == ' ') {
                 if (text->strings[curString].firstSpaceIdx == 0)
                     text->strings[curString].firstSpaceIdx = curChar;
+                if ((curChar >= text->strings[curString].firstSpaceIdx)   & 
+                    (text->strings[curString].value[curChar + 1] != ' ') &
+                    (text->strings[curString].lastSpaceBeforeArgs == 0))
+                    text->strings[curString].lastSpaceBeforeArgs = curChar;
+                
                 if (curChar > lastStrNotSpace)
                     text->strings[curString].value[curChar] = '\0';
             }
+            else if (text->strings[curString].firstSpaceIdx != 0) {
+                text->strings[curString].lenOfArgs += 1;
+            }
+            text->strings[curString].length = lastStrNotSpace + 1;
         }
     }
 }
