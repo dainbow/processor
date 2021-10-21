@@ -17,7 +17,7 @@ int MyFPuts(const uint8_t *str, FILE *stream) {
 bool MyStrCmp(const int8_t* str1, const int8_t* str2) {
     size_t strIdx = 0;
     
-    while (str1[strIdx] != '\0' && str2[strIdx] != '\0') {
+    while ((str1[strIdx] != '\0') && (str2[strIdx] != '\0')) {
         if (str1[strIdx] != str2[strIdx]) {
             return 1;
         }

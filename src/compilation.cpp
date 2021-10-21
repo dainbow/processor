@@ -7,11 +7,11 @@ if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length =
     printf("Command name: %s.\n", #cmdName);                                                                            \
                                                                                                                         \
     *(output.bytesArray + output.bytesCount) = (uint8_t)cmdNum;                                                         \
-    output.bytesCount += 1;                                                                                             \
+    output.bytesCount += COMMAND_SIZE;                                                                                  \
     if(cmdNum % 4) {                                                                                                    \
         comArgs.argFlags.bytes |= LABEL_FLAG;                                                                           \
-                                                                                                                        \
         ParseArgs(&currentString, &comArgs, !(cmdArgFilter));                                                           \
+                                                                                                                        \
         printf("Arg is %d\nReg is %d\nIs to RAM? %d\nLabel is %s\n", comArgs.argConst, comArgs.argReg, comArgs.argFlags.bytes & MEM_FLAG, (comArgs.argFlags.bytes & LABEL_FLAG) ? comArgs.labelName : "0");        \
         if (cmdArgFilter) {                                                                                             \
             printf("UNCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                \
@@ -21,17 +21,17 @@ if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length =
         printf("Bytes: %u\n", comArgs.argFlags.bytes);                                                                  \
                                                                                                                         \
         for (uint32_t curArg = 0; curArg < cmdNum % 4; curArg++) {                                                      \
-            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << 4 | comArgs.argReg);         \
+            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << SHIFT_OF_FLAGS | comArgs.argReg);         \
             output.bytesCount += BYTE_OF_ARGS;                                                                          \
                                                                                                                         \
             if (comArgs.argFlags.bytes & CONST_FLAG) {                                                                  \
                 *(uint32_t*)(output.bytesArray + output.bytesCount) = comArgs.argConst;                                 \
-                output.bytesCount += ARGUMENT_SIZE;                                                                     \
+                output.bytesCount += CONST_ARGUMENT_SIZE;                                                                     \
             }                                                                                                           \
                                                                                                                         \
-            if (comArgs.argFlags.bytes & LABEL_FLAG) {                                                                  \
-                *(uint32_t*)(output.bytesArray + output.bytesCount) = FindLabel(comArgs.labelName, &labels);            \
-                output.bytesCount += ARGUMENT_SIZE;                                                                     \
+            if (comArgs.argFlags.bytes & LABEL_FLAG) {                                        \
+                *(uint32_t*)(output.bytesArray + output.bytesCount) = (labels.isAllDataRead) ? FindLabel(comArgs.labelName, &labels) : 0;            \
+                output.bytesCount += CONST_ARGUMENT_SIZE;                                                                     \
             }                                                                                                           \
         }                                                                                                               \
     }                                                                                                                   \
@@ -53,6 +53,7 @@ int main(int32_t argc, char** argv) {
         MakeStrings(&input);
         ProcessStrings(&input);
         Compile(&input, outputFile);  //TODO При одинакомых названиях в скобочках номер копии.
+        Compile(&input, outputFile); 
     }
 
     printf("OK");
@@ -84,7 +85,11 @@ void Compile(Text* text, const char* outName) {
     static uint32_t NUM_OF_COMPILING = 1;
 
     CompileResult output = {0, (uint8_t*)calloc(text->bufSize + 4, sizeof(output.bytesArray[0]))};
+    
     static Labels labels = {};
+    if (NUM_OF_COMPILING > 1) {
+        labels.isAllDataRead = 1;
+    }
 
     for(uint32_t curString = 0; curString < text->strAmount; curString++) {  
         Arguments comArgs = {};
@@ -94,14 +99,15 @@ void Compile(Text* text, const char* outName) {
 
         if (IfLabel(&currentString, &labels, output.bytesCount) != 1) {
         #include "cmd_def.h"
-        printf("UNKNOWN COMMAND ON %u LINE\n", curString);
+        {printf("UNKNOWN COMMAND ON %u LINE\n", curString);
+        abort();}
         } 
     }
     #undef DEF_CMD_
 
     FILE* outputd = fopen(outName, "wb");
-    printf("I wrote %llu signature bytes\n",  fwrite("DAIN", 1, 4, outputd));
-    printf("I wrote %llu bytes from array\n", fwrite(output.bytesArray, 1, output.bytesCount, outputd));
+    printf("I wrote %llu signature bytes\n",  fwrite(SIGNATURE, 1, SIGNATURE_SIZE, outputd));
+    printf("I wrote %llu bytes from array\n---------END OF %u COMPILING-------\n", fwrite(output.bytesArray, 1, output.bytesCount, outputd), NUM_OF_COMPILING);
 
     fclose(outputd);
     free(output.bytesArray);
@@ -127,10 +133,6 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel) {
         printf("I have parsed %llu\nI should %llu\n", sumLenArgs, string->lenOfArgs);
 
         assert(FAIL && "SOME ARGUMENTS ARE SUBSTRINGS OF ANOTHER STRINGS");
-    }
-
-    if (comArg->argFlags.bytes == 0) {
-        assert(FAIL && "NO ARGUMENTS FOR COMMAND WITH ARGUMENTS");
     }
 }
 
@@ -255,11 +257,13 @@ bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
         if (strlen(labelName) + 1 == string->length) {
             printf("Found label\n");
             if (labels->curLbl < MAX_LABEL_AMOUNT) {
+                if (labels->isAllDataRead == 0) {
                 strcpy(labels->array[labels->curLbl].name, labelName);
                 labels->array[labels->curLbl].go = curCommandPointer;
                 labels->curLbl++;
 
                 printf("%u label name is \"%s\"\n", labels->curLbl, labels->array[labels->curLbl - 1].name);
+                }
 
                 return 1;
             }
@@ -279,6 +283,8 @@ bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
 int32_t FindLabel(char lblName[], Labels* labels) {
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(strcmp(lblName, labels->array[curLbl].name) == 0) {
+            printf("Label %s goes to %d ip\n", lblName, labels->array[curLbl].go);
+
             return labels->array[curLbl].go;
         }
     }

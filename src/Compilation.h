@@ -8,7 +8,6 @@
 
 const uint32_t MAX_LABEL_NAME = 100;
 const uint32_t MAX_LABEL_AMOUNT = 70;
-const uint32_t BYTE_OF_ARGS = 1;
 
 struct CompileResult {
     int32_t bytesCount;
@@ -40,14 +39,8 @@ struct Label {
 struct Labels {
     Label array[MAX_LABEL_AMOUNT];
     uint32_t curLbl;
+    bool isAllDataRead;
 };
-
-const int32_t FAIL = 0;
-
-const int32_t MEM_FLAG = 1;
-const int32_t REG_FLAG = 1 << 1;
-const int32_t CONST_FLAG = 1 << 2;
-const int32_t LABEL_FLAG = 1 << 3;
 
 void ReadOutArgument(int32_t* argc, char *argv[], char** outputFile);
 void Compile(Text* text, const char* outName);

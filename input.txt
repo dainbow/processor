@@ -1,5 +1,3 @@
-push 4
-push 13
-next:
-add
-jump next
+in
+out
+hlt

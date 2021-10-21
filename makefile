@@ -25,7 +25,7 @@ $(BinDir)/Utilities.o: $(SrcDir)/Utilities.cpp $(SrcDir)/Utilities.h
 $(BinDir)/Stack.o: $(SrcDir)/stack.cpp $(SrcDir)/stack.h $(SrcDir)/commands.h
 	g++ -c $(SrcDir)/stack.cpp -o $(BinDir)/Stack.o $(CXXFLAGS)
 
-$(BinDir)/Processor.o: $(SrcDir)/Processor.cpp $(SrcDir)/Processor.h $(SrcDir)/commands.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/stack.h
+$(BinDir)/Processor.o: $(SrcDir)/Processor.cpp $(SrcDir)/Processor.h $(SrcDir)/commands.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/stack.h $(SrcDir)/cmd_def.h
 	g++ -c $(SrcDir)/Processor.cpp -o $(BinDir)/Processor.o $(CXXFLAGS)
 
 .PHONY: clean

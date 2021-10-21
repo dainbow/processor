@@ -5,6 +5,7 @@ int32_t StackCtor_(Stack* stack, VarInfo creationInfo) {
 
     stack->capacity     = STACK_BEGINNING_CAPACITY;
     stack->size         = 0;
+    stack->memory       = (uint8_t*)calloc(MAX_MEMORY_SIZE, sizeof(stack->memory[0]));
 
     #if (STACK_DEBUG >= LOW_LEVEL)
     stack->creationInfo = creationInfo;
