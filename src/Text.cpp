@@ -60,7 +60,7 @@ void FillStrings(struct Text *text) {
 }
 
 void ProcessStrings(Text* text) {
-    int32_t lastStrNotSpace = 0;
+    uint32_t lastStrNotSpace = 0;
 
     for (size_t curString = 0; curString < text->strAmount; curString++) {
         for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {

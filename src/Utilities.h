@@ -40,4 +40,9 @@ bool MyStrCmp(const int8_t*  str1, const int8_t* str2);
 //-------------------------------------------------------------------------------------------------------
 
 size_t CountFileSize (int fd);
+
+void ScanIn(float* scannedValue);
+
+void DetermiteOutputFile(int* argc, char *argv[], char** outputFile); 
+
 #endif

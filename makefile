@@ -13,13 +13,19 @@ compiler.exe: $(BinDir)/compilation.o $(BinDir)/Text.o $(BinDir)/Utilities.o
 processor.exe: $(BinDir)/Processor.o $(BinDir)/Text.o $(BinDir)/Utilities.o $(BinDir)/Stack.o
 	g++ $(BinDir)/Processor.o $(BinDir)/Text.o $(BinDir)/Utilities.o $(BinDir)/Stack.o -o processor.exe
 
+decompiler.exe: $(BinDir)/decompiler.o $(BinDir)/Text.o $(BinDir)/Utilities.o
+	g++ $(BinDir)/decompiler.o $(BinDir)/Text.o $(BinDir)/Utilities.o -o decompiler.exe
+
 $(BinDir)/compilation.o: $(SrcDir)/compilation.cpp $(SrcDir)/Compilation.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/commands.h $(SrcDir)/cmd_def.h
 	g++ -c $(SrcDir)/compilation.cpp -o $(BinDir)/compilation.o $(CXXFLAGS)
+
+$(BinDir)/decompiler.o: $(SrcDir)/decompiler.cpp $(SrcDir)/decompiler.h $(SrcDir)/Text.h $(SrcDir)/Utilities.h $(SrcDir)/commands.h $(SrcDir)/cmd_def.h
+	g++ -c $(SrcDir)/decompiler.cpp -o $(BinDir)/decompiler.o $(CXXFLAGS)
 
 $(BinDir)/Text.o: $(SrcDir)/Text.cpp $(SrcDir)/Text.h $(SrcDir)/Utilities.h
 	g++ -c $(SrcDir)/Text.cpp -o $(BinDir)/Text.o $(CXXFLAGS)
 
-$(BinDir)/Utilities.o: $(SrcDir)/Utilities.cpp $(SrcDir)/Utilities.h
+$(BinDir)/Utilities.o: $(SrcDir)/Utilities.cpp $(SrcDir)/Utilities.h $(SrcDir)/commands.h
 	g++ -c $(SrcDir)/Utilities.cpp -o $(BinDir)/Utilities.o $(CXXFLAGS)
 
 $(BinDir)/Stack.o: $(SrcDir)/stack.cpp $(SrcDir)/stack.h $(SrcDir)/commands.h

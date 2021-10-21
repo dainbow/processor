@@ -1,81 +1,22 @@
 #include "Compilation.h"
-
-#define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, ...)                                                                    \
-if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length == strlen(#cmdName)))                    \
-& !MyStrCmp((const int8_t*)currentString.value, (const int8_t*)#cmdName)) {                                             \
-    uint32_t* argIdxs = (uint32_t*)calloc(MAX_ARGUMENT_AMOUNT, sizeof(argIdxs[0]));                                     \
-    printf("Command name: %s.\n", #cmdName);                                                                            \
-                                                                                                                        \
-    *(output.bytesArray + output.bytesCount) = (uint8_t)cmdNum;                                                         \
-    output.bytesCount += COMMAND_SIZE;                                                                                  \
-    if(cmdNum % 4) {                                                                                                    \
-        comArgs.argFlags.bytes |= LABEL_FLAG;                                                                           \
-        ParseArgs(&currentString, &comArgs, !(cmdArgFilter));                                                           \
-                                                                                                                        \
-        printf("Arg is %d\nReg is %d\nIs to RAM? %d\nLabel is %s\n", comArgs.argConst, comArgs.argReg, comArgs.argFlags.bytes & MEM_FLAG, (comArgs.argFlags.bytes & LABEL_FLAG) ? comArgs.labelName : "0");        \
-        if (cmdArgFilter) {                                                                                             \
-            printf("UNCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                \
-            abort();                                                                                                    \
-        }                                                                                                               \
-                                                                                                                        \
-        printf("Bytes: %u\n", comArgs.argFlags.bytes);                                                                  \
-                                                                                                                        \
-        for (uint32_t curArg = 0; curArg < cmdNum % 4; curArg++) {                                                      \
-            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << SHIFT_OF_FLAGS | comArgs.argReg);         \
-            output.bytesCount += BYTE_OF_ARGS;                                                                          \
-                                                                                                                        \
-            if (comArgs.argFlags.bytes & CONST_FLAG) {                                                                  \
-                *(uint32_t*)(output.bytesArray + output.bytesCount) = comArgs.argConst;                                 \
-                output.bytesCount += CONST_ARGUMENT_SIZE;                                                                     \
-            }                                                                                                           \
-                                                                                                                        \
-            if (comArgs.argFlags.bytes & LABEL_FLAG) {                                        \
-                *(uint32_t*)(output.bytesArray + output.bytesCount) = (labels.isAllDataRead) ? FindLabel(comArgs.labelName, &labels) : 0;            \
-                output.bytesCount += CONST_ARGUMENT_SIZE;                                                                     \
-            }                                                                                                           \
-        }                                                                                                               \
-    }                                                                                                                   \
-}                                                                                                                       \
-else                                                                                                               
-  
-
+                                                                                                              
 int main(int32_t argc, char** argv) {
     char* outputFile = 0;
-    ReadOutArgument(&argc, argv, &outputFile);
+    DetermiteOutputFile(&argc, argv, &outputFile);
 
     printf("%s\n", outputFile);
 
-    for (int32_t curArgument = 1; curArgument < argc; curArgument++) {
-        Text input = {};
-        printf("Compiling file: %s...\n", argv[curArgument]);
+    Text input = {};
+    printf("Compiling file: %s...\n", argv[1]);
     
-        ReadTextFromFile(&input, argv[curArgument]);
-        MakeStrings(&input);
-        ProcessStrings(&input);
-        Compile(&input, outputFile);  //TODO При одинакомых названиях в скобочках номер копии.
-        Compile(&input, outputFile); 
-    }
+    ReadTextFromFile(&input, argv[1]);
+    MakeStrings(&input);
+    ProcessStrings(&input);
+    Compile(&input, outputFile);
+    Compile(&input, outputFile); 
 
     printf("OK");
     return 0;
-}
-
-void ReadOutArgument(int32_t* argc, char *argv[], char** outputFile) {
-	assert(argc != nullptr);
-	assert(argv != nullptr);
-
-    *outputFile = (char*)calloc(MAX_FILE_SIZE, sizeof(**outputFile));
-
-    for (int32_t curArgument = 1; curArgument < *argc; curArgument++) {
-        if (!strcmp(argv[curArgument], "-o")) {
-            strcat(*outputFile, argv[curArgument + 1]);
-            *argc = curArgument;
-
-            return;
-        }
-    }
-
-    strcat(*outputFile, "b.txt");
 }
 
 void Compile(Text* text, const char* outName) {
@@ -94,8 +35,6 @@ void Compile(Text* text, const char* outName) {
     for(uint32_t curString = 0; curString < text->strAmount; curString++) {  
         Arguments comArgs = {};
         String currentString = text->strings[curString];
-
-        printf("Curstring length is %llu\n", currentString.length);
 
         if (IfLabel(&currentString, &labels, output.bytesCount) != 1) {
         #include "cmd_def.h"
@@ -280,7 +219,7 @@ bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
     return 0;
 }
 
-int32_t FindLabel(char lblName[], Labels* labels) {
+int32_t FindLabelByName(char lblName[], Labels* labels) {
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(strcmp(lblName, labels->array[curLbl].name) == 0) {
             printf("Label %s goes to %d ip\n", lblName, labels->array[curLbl].go);

@@ -1,4 +1,3 @@
-#include "commands.h"
 #include "Processor.h"
 
 int main(int argc, char* argv[]) {

@@ -1,0 +1,7 @@
+push   10.5
+jump   l1
+in {dx + 5}
+push {dx + 5}
+l1:
+out   
+hlt   

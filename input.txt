@@ -1,3 +1,15 @@
-in
+push 0
+pop ax
+next:
+push ax
+push ax
+mul
 out
+push ax
+push 1
+add
+pop ax
+push ax
+push 7
+jb next
 hlt

@@ -1,6 +1,7 @@
 #include <sys\stat.h>
 
 #include "Utilities.h"
+#include "commands.h"
 
 int MyFPuts(const uint8_t *str, FILE *stream) {
     assert(str != nullptr);
@@ -35,4 +36,30 @@ size_t CountFileSize (int fd) {
     fstat(fd, &fileStat);
 	
 	return fileStat.st_size;
+}
+
+void ScanIn(float* scannedValue) {
+    while (scanf("%g", scannedValue) != 1) {
+        printf("Please enter correct value\n");
+        fflush(stdin);
+    }
+}
+
+void DetermiteOutputFile(int32_t* argc, char *argv[], char** outputFile) {
+	assert(argc != nullptr);
+	assert(argv != nullptr);
+    assert(*argc > 1);
+
+    *outputFile = (char*)calloc(MAX_FILE_SIZE, sizeof(**outputFile));
+
+    for (int32_t curArgument = 1; curArgument < *argc; curArgument++) {
+        if (!strcmp(argv[curArgument], "-o")) {
+            strcat(*outputFile, argv[curArgument + 1]);
+            *argc = curArgument;
+
+            return;
+        }
+    }
+
+    strcat(*outputFile, "b.txt");
 }
