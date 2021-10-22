@@ -1,13 +1,14 @@
 #define IF_JUMP_(symbol)                                    \
     StackElem secondOne = StackPop(stack);                  \
     StackElem firstOne = StackPop(stack);                   \
-    printf("First is %d, second is %d\n", firstOne, secondOne); \
                                                             \
     if (firstOne symbol secondOne) {                        \
         commandPointer = SIGNATURE_SIZE + argumentValue;    \
-        printf("MOVING TO %u\n", commandPointer);           \
         break;                                              \
     }
+
+//printf("First is %d, second is %d, symbol is %s\n", firstOne, secondOne, #symbol);
+//printf("MOVING TO %d\n", commandPointer); 
 
 
 DEF_CMD_(push, 1, ((comArgs.argFlags.bytes & LABEL_FLAG) || !(comArgs.argFlags.bytes & (MEM_FLAG | REG_FLAG | CONST_FLAG))),
@@ -19,8 +20,17 @@ DEF_CMD_(push, 1, ((comArgs.argFlags.bytes & LABEL_FLAG) || !(comArgs.argFlags.b
     else {
         StackPush(stack, argumentValue);
     }
-    
-    printf("I'M IN PUSH\n");
+)
+
+DEF_CMD_(drwpc, 4, 1,
+    int maxX = txGetExtentX(); 
+
+    for (uint32_t curPixel = 0; *(stack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {
+        //printf("Drawing %u pixel with value %d\n", curPixel, *(stack->memory + BEGINNING_OF_GMEM + curPixel));
+
+        COLORREF curColor = RGB(*(stack->memory + BEGINNING_OF_GMEM + curPixel), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 1), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 2));
+        txSetPixel((curPixel / 3) % maxX, (curPixel / 3) / maxX, curColor);
+    }
 )
 
 DEF_CMD_(pop, 5, (comArgs.argFlags.bytes & LABEL_FLAG) || (!((!(comArgs.argFlags.bytes & CONST_FLAG)) | (comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & CONST_FLAG) | !(comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & MEM_FLAG) | (!(comArgs.argFlags.bytes & REG_FLAG)) | (!(comArgs.argFlags.bytes & CONST_FLAG)))), 
@@ -55,7 +65,7 @@ DEF_CMD_(in, 13, (comArgs.argFlags.bytes & LABEL_FLAG) || (!((!(comArgs.argFlags
     if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
 
-        printf("Please enter value to put in %u adress of RAM\n", argumentValue);
+        printf("Please enter value to put in %d adress of RAM\n", argumentValue);
         ScanIn(&scannedValue);
 
         *(int32_t*)(stack->memory + argumentValue) = (int32_t)(scannedValue * ACCURACY);
@@ -115,8 +125,43 @@ DEF_CMD_(je, 33, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.by
     IF_JUMP_(==)
 )
 
+DEF_CMD_(ret, 36, 1, 
+    commandPointer = StackPop(retStack);
+    break;
+)
+
 DEF_CMD_(jne, 37, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
     IF_JUMP_(!=)
+)
+
+DEF_CMD_(mkwdw, 40, 1,  
+    int32_t yCoord = *(StackElem*)(stack->memory + BEGINNING_OF_GMEM - 4) / ACCURACY;
+    int32_t xCoord = *(StackElem*)(stack->memory + BEGINNING_OF_GMEM - 8) / ACCURACY;
+
+    assert(yCoord > 0);
+    assert(xCoord > 0);
+
+    txCreateWindow(xCoord, yCoord);
+)
+
+DEF_CMD_(call, 41, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+    StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments);
+
+    commandPointer = SIGNATURE_SIZE + argumentValue;
+    break;
+)
+
+DEF_CMD_(popbyte, 45, (comArgs.argFlags.bytes & LABEL_FLAG) || (!((!(comArgs.argFlags.bytes & CONST_FLAG)) | (comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & CONST_FLAG) | !(comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & MEM_FLAG) | (!(comArgs.argFlags.bytes & REG_FLAG)) | (!(comArgs.argFlags.bytes & CONST_FLAG)))), 
+    if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
+        argumentValue /= ACCURACY;
+        
+        *(stack->memory + argumentValue) = (uint8_t)(StackPop(stack) / ACCURACY);
+    }
+    else if (commands->buffer[commandPointer + 1] & (REG_FLAG << SHIFT_OF_FLAGS)) {
+        stack->registers[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int8_t)(StackPop(stack) / ACCURACY);
+    }
+    else
+        StackPop(stack);
 )
 
 DEF_CMD_(hlt, 0, 1, 

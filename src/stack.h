@@ -66,7 +66,7 @@ const float INCREASE_MULTIPLIER = 1.5;
 const float DECREASE_MULTIPLIER = 2;
 
 enum StackError {
-    NO_ERROR = 0,
+    STACK_NO_ERROR = 0,
     STACK_OVERFLOW,
     STACK_UNDERFLOW,
     CAPACITY_NEGATIVE,
@@ -103,8 +103,8 @@ struct Stack {
     int32_t capacity;
     uint8_t* data;
 
-    int32_t registers[MAX_REGISTER_AMOUNT];
-    uint8_t* memory;
+    StackElem registers[MAX_REGISTER_AMOUNT];
+    int8_t* memory;
 #if (STACK_DEBUG >= MID_LEVEL)
     canary canaryRight;
 #endif
@@ -335,4 +335,4 @@ void StackDiv(Stack* stack);
 
 void StackOut(Stack* stack);
 
-void StackExeDump(uint8_t* buffer, uint64_t bufSize, uint32_t comPtr);
+void StackExeDump(uint8_t* buffer, uint64_t bufSize, StackElem comPtr);

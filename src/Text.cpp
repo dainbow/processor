@@ -34,7 +34,6 @@ void CountStrAmount(struct Text *text) {
             strCount++;
         }
     }
-
     text->strAmount = strCount;
 }
 
@@ -112,6 +111,7 @@ void ProcessStrings(Text* text) {
 int MakeStrings(struct Text *text) {
 	CountStrAmount(text);
 	FillStrings(text);
+    
 
 	return 1;
 }

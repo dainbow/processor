@@ -2,6 +2,7 @@
 #include "Text.h"
 #include "commands.h"
 #include "decompiler.h"
+#include "stack.h"
 
 int main(int argc, char* argv[]) {
     char* outputFile = 0;

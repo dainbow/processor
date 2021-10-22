@@ -6,22 +6,23 @@
 #define DEF_CMD_(cmdName, cmdNum, ...) \
     CMD_##cmdName = cmdNum,
 
-const uint32_t COMMAND_SIZE = 1;
-const uint32_t CONST_ARGUMENT_SIZE = 4;
-const uint32_t MAX_ARGUMENT_AMOUNT = 4;
-const uint32_t SHIFT_OF_FLAGS = 4;
-const uint32_t MAX_FILE_SIZE = 100;
-const uint32_t ACCURACY = 1000;
-const uint32_t SIGNATURE_SIZE = 5;
-const uint32_t FAIL = 0;
-const uint32_t BYTE_OF_ARGS = 1;
-const uint32_t MAX_REGISTER_AMOUNT = 4;
-const uint32_t MAX_MEMORY_SIZE = 4000;
-const uint32_t MAX_OUTPUTFILE_LENGTH = 100;
-const uint32_t MAX_NUMBER_SIZE = 100;
-const uint32_t MAX_REG_NAME = 3;
-const uint32_t MAX_LABEL_NAME = 100;
-const uint32_t MAX_LABEL_AMOUNT = 70;
+const int32_t COMMAND_SIZE = 1;
+const int32_t CONST_ARGUMENT_SIZE = 4;
+const int32_t MAX_ARGUMENT_AMOUNT = 4;
+const int32_t SHIFT_OF_FLAGS = 4;
+const int32_t MAX_FILE_SIZE = 100;
+const int32_t ACCURACY = 10;
+const int32_t SIGNATURE_SIZE = 5;
+const int32_t FAIL = 0;
+const int32_t BYTE_OF_ARGS = 1;
+const int32_t MAX_REGISTER_AMOUNT = 4;
+const int32_t MAX_MEMORY_SIZE = 1000000;
+const int32_t MAX_OUTPUTFILE_LENGTH = 100;
+const int32_t MAX_NUMBER_SIZE = 100;
+const int32_t MAX_REG_NAME = 3;
+const int32_t MAX_LABEL_NAME = 100;
+const int32_t MAX_LABEL_AMOUNT = 70;
+const int32_t BEGINNING_OF_GMEM = 1000;
 
 const char SIGNATURE[] = "DAIN1"; 
 

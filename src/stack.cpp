@@ -5,7 +5,6 @@ int32_t StackCtor_(Stack* stack, VarInfo creationInfo) {
 
     stack->capacity     = STACK_BEGINNING_CAPACITY;
     stack->size         = 0;
-    stack->memory       = (uint8_t*)calloc(MAX_MEMORY_SIZE, sizeof(stack->memory[0]));
 
     #if (STACK_DEBUG >= LOW_LEVEL)
     stack->creationInfo = creationInfo;
@@ -93,28 +92,28 @@ StackElem StackPop(Stack* stack) {
 StackError IsStackOk(Stack* stack) {
     if (stack == nullptr)                               return STACK_NULL;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 StackError IsDataOk(Stack* stack) {
     if (stack->data - SHIFT == nullptr)                 return  DATA_NULL;
     if (stack->data - SHIFT == (uint8_t*)FREE_VALUE)    return STACK_FREE;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 StackError IsCapacityOk(Stack* stack) {
     if (stack->capacity < 0)             return CAPACITY_NEGATIVE;
     if (!isfinite(stack->capacity))      return CAPACITY_INFINITE;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 StackError IsSizeOk(Stack* stack) {
     if (stack->size > stack->capacity)   return STACK_OVERFLOW;
     if (stack->size < 0)                 return STACK_UNDERFLOW;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 #if (STACK_DEBUG >= MID_LEVEL)
@@ -126,7 +125,7 @@ StackError IsCanariesOk(Stack* stack) {
     if (*(canary*)(stack->data - SHIFT)      != CANARY) return LEFT_DATA_CANARY_IRRUPTION;
     if (*(canary*)(stack->data + sizeOfData) != CANARY) return RIGHT_DATA_CANARY_IRRUPTION;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 #endif
 
@@ -137,7 +136,7 @@ StackError IsHashesOk(Stack* stack) {
     if (GetStackHash(stack) != stackHash) return STACK_HASH_IRRUPTION;
     if (GetDataHash(stack)  != dataHash)  return DATA_HASH_IRRUPTION;
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 StackError IsAllOk(Stack* stack) {
@@ -154,7 +153,7 @@ StackError IsAllOk(Stack* stack) {
     if (StackError error =  IsHashesOk(stack))   return error;
     #endif
 
-    return NO_ERROR;
+    return STACK_NO_ERROR;
 }
 
 hashValue GetHash(uint8_t* pointer, uint64_t size) {
@@ -193,7 +192,7 @@ int StackDump(Stack* stack, VarInfo dumpInfo, FILE* outstream) {
     setvbuf(outstream, NULL, _IONBF, 0);
 
     fprintf(outstream, "Dump from %s() at %s(%d) in stack called now \"%s\": IsAllOk() %s\n",
-            dumpInfo.function, dumpInfo.file, dumpInfo.line, dumpInfo.name, IsAllOk(stack) == NO_ERROR ? "Ok" : "FAILED");
+            dumpInfo.function, dumpInfo.file, dumpInfo.line, dumpInfo.name, IsAllOk(stack) == STACK_NO_ERROR ? "Ok" : "FAILED");
 
     fprintf(outstream, "stack <int> [%p] (ok) \"%s\" ",
             &stack, stack->creationInfo.name);
@@ -275,7 +274,7 @@ int StackDump(Stack* stack, VarInfo dumpInfo, FILE* outstream) {
 
 const char* ErrorToString(StackError error) {
     switch(error) {
-        case NO_ERROR:                      return "Ok";
+        case STACK_NO_ERROR:                      return "Ok";
         case STACK_OVERFLOW:                return "OVERFLOW";
         case STACK_UNDERFLOW:               return "UNDERFLOW";
         case CAPACITY_NEGATIVE:             return "NEGATIVE CAPACITY";
@@ -381,18 +380,18 @@ uint64_t powllu(int32_t base, int32_t power) {
 void StackAdd(Stack* stack) {
     CheckAllStack(stack);
 
-    int32_t firstSummand  = StackPop(stack);
-    int32_t secondSummand = StackPop(stack); 
+    StackElem firstSummand  = StackPop(stack);
+    StackElem secondSummand = StackPop(stack); 
 
-    printf("Pushed add result %d\n", firstSummand + secondSummand);
+    //printf("Pushed add result %d\n", firstSummand + secondSummand);
     StackPush(stack, firstSummand + secondSummand);
 }
 
 void StackSub(Stack* stack) {
     CheckAllStack(stack);
 
-    int32_t deductible = StackPop(stack);
-    int32_t reduced    = StackPop(stack);
+    StackElem deductible = StackPop(stack);
+    StackElem reduced    = StackPop(stack);
 
     StackPush(stack, reduced - deductible);
 }
@@ -400,8 +399,8 @@ void StackSub(Stack* stack) {
 void StackMul(Stack* stack) {
     CheckAllStack(stack);
 
-    int32_t firstMult  = StackPop(stack);
-    int32_t secondMult = StackPop(stack);
+    StackElem firstMult  = StackPop(stack);
+    StackElem secondMult = StackPop(stack);
 
     StackPush(stack, firstMult * secondMult / ACCURACY);
 }
@@ -409,25 +408,24 @@ void StackMul(Stack* stack) {
 void StackDiv(Stack* stack) {
     CheckAllStack(stack);
 
-    int32_t divisible = StackPop(stack);
-    int32_t divider   = StackPop(stack);
+    StackElem divisible = StackPop(stack);
+    StackElem divider   = StackPop(stack);
 
     StackPush(stack, divisible / divider * ACCURACY);
 }
 
 void StackOut(Stack* stack) {
     CheckAllStack(stack);
-    printf("IN OUT\n");
 
     for (int32_t curIdx = stack->size; curIdx > 0; curIdx--) {
-        float printOut = (float)StackPop(stack);
+        double printOut = (double)StackPop(stack);
         printOut /= ACCURACY;
 
         printf("[%d]: %f\n", curIdx, printOut);
     }
 }
 
-void StackExeDump(uint8_t* buffer, uint64_t bufSize, uint32_t comPtr) {
+void StackExeDump(uint8_t* buffer, uint64_t bufSize, StackElem comPtr) {
     int32_t printCount = 0;
 
     for (uint32_t curByte = 0; curByte < bufSize; curByte++) {

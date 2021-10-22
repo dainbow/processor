@@ -14,9 +14,6 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
 
 #define DEF_CMD_(cmdName, cmdNum, ...)                                                                                              \
     case CMD_##cmdName: {                                                                                                           \
-        if (strcmp(#cmdName, "jump") == 0) {                                                                                        \
-            printf("I M IN JUMP WITH %d BYTES\n", input->buffer[commandPointer + 1] & (LABEL_FLAG << SHIFT_OF_FLAGS));              \
-        }                                                                                                                           \
         DecompileArgs decArgs = {};                                                                                                 \
                                                                                                                                     \
         if (cmdNum % MAX_ARGUMENT_AMOUNT) {                                                                                         \
@@ -28,13 +25,13 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
             if (decArgs.bytesOfArgs & ((CONST_FLAG << SHIFT_OF_FLAGS) | (LABEL_FLAG << SHIFT_OF_FLAGS))) {                          \
                 if ((decArgs.bytesOfArgs & (LABEL_FLAG << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 0)) {                        \
                     printf("TRYING TO READ LABEL AFTER JUMP\n");                                                                    \
-                    labels.array[labels.curLbl].go = *((int32_t*)(input->buffer + commandPointer + 2));                             \
+                    labels.array[labels.curLbl].go = *((StackElem*)(input->buffer + commandPointer + 2));                             \
                     sprintf(labels.array[labels.curLbl].name, "l%u", labels.curLbl + 1);                                            \
                     labels.curLbl++;                                                                                                \
                 }                                                                                                                   \
                 else if ((decArgs.bytesOfArgs & (LABEL_FLAG << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 1)) {                   \
                     int32_t foundedNum = 0;                                                                                         \
-                    if ((foundedNum = FindLabelByCmdPtr(*(int32_t*)(input->buffer + commandPointer + 2), &labels)) != -1) {         \
+                    if ((foundedNum = FindLabelByCmdPtr(*(StackElem*)(input->buffer + commandPointer + 2), &labels)) != -1) {         \
                         sprintf(decArgs.numberToString, "%s", labels.array[foundedNum].name);                                       \
                     }                                                                                                               \
                     else {                                                                                                          \
@@ -42,7 +39,7 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
                     }                                                                                                               \
                 }                                                                                                                   \
                 else                                                                                                                \
-                    sprintf(decArgs.numberToString, "%g", ((float)(*((int32_t*)(input->buffer + commandPointer + 2)))) / ACCURACY); \
+                    sprintf(decArgs.numberToString, "%lf", ((double)(*((StackElem*)(input->buffer + commandPointer + 2)))) / ACCURACY); \
                 decArgs.sizeOfArguments += CONST_ARGUMENT_SIZE;                                                                     \
             }                                                                                                                       \
         }                                                                                                                           \
