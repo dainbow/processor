@@ -80,6 +80,7 @@ void ProcessStrings(Text* text) {
             }
         }
 
+        bool isInString = 0;
         for (uint32_t curChar = 0; text->strings[curString].value[curChar] != '\0'; curChar++) {
             if (text->strings[curString].value[0] == ' ') {
                 text->strings[curString].value[0] = '\0';
@@ -89,7 +90,14 @@ void ProcessStrings(Text* text) {
 
                 curChar = 0;
             }
+            else if (text->strings[curString].value[curChar] == '"') {
+                text->strings[curString].lenOfArgs += 1;
+                isInString = !isInString;
+            }
             else if (text->strings[curString].value[curChar] == ' ') {
+                if (isInString) {
+                    text->strings[curString].lenOfArgs += 1;
+                }
                 if (text->strings[curString].firstSpaceIdx == 0)
                     text->strings[curString].firstSpaceIdx = curChar;
                 if ((curChar >= text->strings[curString].firstSpaceIdx)   & 

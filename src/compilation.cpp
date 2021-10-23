@@ -58,7 +58,9 @@ void Compile(Text* text, const char* outName) {
     NUM_OF_COMPILING++;
 }
 
-void ParseArgs(String* string, Arguments* comArg, bool isLabel) {
+void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
+    printf("isLabel is %d\nisString is %d\n", isLabel, isString);
+
     size_t sumLenArgs      = 0;
     comArg->argFlags.bytes = 0;
 
@@ -66,6 +68,8 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel) {
 
     if (isLabel)
         ParseLabel(      ptrToArgs, comArg, &sumLenArgs);
+    else if (isString)
+        ParseString (    ptrToArgs, comArg, &sumLenArgs);
     else {
         ParseBrackets(   ptrToArgs, comArg, &sumLenArgs);
         ParseRegister(   ptrToArgs, comArg, &sumLenArgs);
@@ -191,18 +195,41 @@ void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
     }
 }
 
+void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
+    char trashLetters[100] = "";
+    printf("PARSING STRING\n");
+
+    switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", comArg->stringName, trashLetters)) {  
+        case 2:
+            printf("Found string \"$%s$\"", comArg->stringName);
+            *sumLenArgs += strlen(comArg->stringName) + 2*QUOTE_SIZE + 2*STRING_DIVIDER_SIZE;
+            comArg->argFlags.bytes |= STRING_FLAG;
+            break;
+        case 1:
+            printf("Found string \"$%s$\"", comArg->stringName);
+            assert(FAIL && "RIGHT QUOTE NOT FOUND OR RIGHT DOLLAR NOT PLACED");
+            break;
+        case 0:
+            assert(FAIL && "UNKNOWN FORMAT OF STRING");
+            break;
+        default:
+            assert(FAIL && "UNKNOWN CASE OF STRING ANALYSING");
+            break;
+    }
+}
+
 const char* ShiftAndCheckArgs(String* string) {
     char trashLetters[100] = "";
     const char* ptrToArgs = (const char*)string->value + string->lastSpaceBeforeArgs;
     
-    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-]", trashLetters) & (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
+    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-\"\"!,$']", trashLetters) & (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
         assert(FAIL && "UNKNOWN LETTERS IN ARGUMENT");
     }
 
     return ptrToArgs;
 }
 
-bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
+bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {
     char trashLetters[100] = "";
     char labelName[MAX_LABEL_NAME] = "";
 
@@ -236,9 +263,9 @@ bool IfLabel(String* string, Labels* labels, int32_t curCommandPointer) {
 StackElem FindLabelByName(char lblName[], Labels* labels) {
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(strcmp(lblName, labels->array[curLbl].name) == 0) {
-            printf("Label %s goes to %d ip\n", lblName, labels->array[curLbl].go);
+            printf("Label %s goes to %lld ip\n", lblName, labels->array[curLbl].go);
 
-            return labels->array[curLbl].go;
+            return (StackElem)labels->array[curLbl].go;
         }
     }
 

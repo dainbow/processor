@@ -1,5 +1,0 @@
-push -2.5
-push -3
-add
-out
-hlt

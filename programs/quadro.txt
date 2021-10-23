@@ -1,0 +1,169 @@
+in ax ;a - coef of equation
+in bx ;b - coef of equation
+in cx ;c - coef of equation
+call SolveQuadro
+hlt
+
+SolveQuadro:
+push 0
+push ax
+jne witha
+    call SolveWithoutA
+    ret
+witha:
+    call SolveWithA
+    ret
+
+SolveWithoutA:
+push bx
+push 0
+jne withoutAwithB
+    push cx
+    push 0
+    jne withoutAwithoutBwithC
+        strout InfRoots
+        ret
+    withoutAwithoutBwithC:
+        strout NoRoots
+        ret
+withoutAwithB:
+    push cx
+    push 0
+    jne withoutAwithBwithC
+        strout OneRoot
+        push 0
+        out
+        ret
+    withoutAwithBwithC:
+        strout OneRoot
+        call MinusCDivB
+        out
+        ret
+
+
+SolveWithA:
+    push bx
+    push 0
+    jne withAwithB
+        push cx
+        push 0
+        jne withAwithoutBwithC
+            strout OneRoot
+            push 0
+            out
+            ret
+        withAwithoutBwithC:
+            strout TwoRoots
+            push cx
+            froot
+            push cx
+            froot
+            push -1
+            mul
+            out
+            ret
+    withAwithB:
+        push cx
+        push 0
+        jne withAwithBwithC
+            strout TwoRoots
+            call MinusBDivA
+            push 0
+            out
+            ret
+        withAwithBwithC:
+            call CalculateD
+            push dx
+            push 0
+            ja DAboveZero
+                push dx
+                push 0
+                je DIsZero
+                    strout NoRoots
+                    ret
+                DIsZero:
+                    strout OneRoot
+                    call MinusBDivDoubleA
+                    out
+                    ret
+            DAboveZero:
+                strout TwoRoots
+                call UseDToCalcRoots
+                out
+                ret
+
+MinusBDivDoubleA:
+    push bx
+    push -1
+    mul
+    push ax
+    push 2
+    mul
+    div
+ret
+
+
+UseDToCalcRoots:
+    push bx
+    push -1
+    mul
+    push dx
+    add
+    push 2
+    push ax
+    mul
+    div
+
+    push bx
+    push -1
+    mul
+    push dx
+    sub
+    push 2
+    push ax
+    mul
+    div
+ret
+
+
+MinusBDivA:
+    push bx
+    push -1
+    mul
+    push ax
+    div
+ret
+
+MinusCDivB:
+    push cx
+    push -1
+    mul
+    push bx
+    div
+ret
+
+CalculateD:
+    push bx
+    push bx
+    mul
+    push ax
+    push cx
+    push 4
+    mul
+    mul
+    sub
+    pop dx
+ret
+
+
+TwoRoots:
+    db "$The equation has two roots$"
+
+OneRoot:
+    db "$The equation has one root$"
+
+InfRoots:
+    db "$The equation has infinite amount of roots$"
+
+NoRoots:
+    db "$The equation doen't have roots$"

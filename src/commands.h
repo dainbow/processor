@@ -8,8 +8,8 @@
 
 const int32_t COMMAND_SIZE = 1;
 const int32_t CONST_ARGUMENT_SIZE = 4;
-const int32_t MAX_ARGUMENT_AMOUNT = 4;
-const int32_t SHIFT_OF_FLAGS = 4;
+const int32_t MAX_COMMAND_TYPES = 4;
+const int32_t SHIFT_OF_FLAGS = 3;
 const int32_t MAX_FILE_SIZE = 100;
 const int32_t ACCURACY = 10;
 const int32_t SIGNATURE_SIZE = 5;
@@ -23,18 +23,23 @@ const int32_t MAX_REG_NAME = 3;
 const int32_t MAX_LABEL_NAME = 100;
 const int32_t MAX_LABEL_AMOUNT = 70;
 const int32_t BEGINNING_OF_GMEM = 1000;
+const int32_t MAX_STRING_NAME = 100;
+const int32_t STRING_DIVIDER_SIZE = 1;
+const int32_t QUOTE_SIZE = 1;
 
 const char SIGNATURE[] = "DAIN1"; 
+const char STRING_DIVIDER = '$';
 
 const int32_t MEM_FLAG = 1;
 const int32_t REG_FLAG = 1 << 1;
 const int32_t CONST_FLAG = 1 << 2;
 const int32_t LABEL_FLAG = 1 << 3;
-const int32_t REG_NUM_MASK = (1) | (1 << 1) | (1 << 2) | (1 << 3);
+const int32_t STRING_FLAG = 1 << 4;
+const int32_t REG_NUM_MASK = (1) | (1 << 1) | (1 << 2);
 
 struct Label {
     char name[MAX_LABEL_NAME];
-    int32_t go = -1;
+    int64_t go = -1;
 };
 
 struct Labels {

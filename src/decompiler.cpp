@@ -28,8 +28,32 @@ void Decompile(Text* input, char* outputfile) {
     }
 
     for (uint32_t commandPointer = SIGNATURE_SIZE; commandPointer < input->bufSize; ) {
+        printf("Now decompiling %u command\n", commandPointer);
         switch (input->buffer[commandPointer]) {
             #include "cmd_def.h"
+            case 36: {//! $ That points on the beginning of string storing
+                int32_t foundedNum = 0;
+                if ((labels.isAllDataRead == 1) && (foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1) {      \
+                    fprintf(output, "%s:\n", labels.array[foundedNum].name);                                                                \
+                }
+
+                commandPointer++;
+                char curChar = 0;
+                fprintf(output, "db $");
+
+                while ((curChar = input->buffer[commandPointer]) != '$') {
+                    fputc(curChar, output);
+                    commandPointer++;
+                }
+                fputc('$', output); 
+                fputc('\n', output);   
+
+                if (commandPointer != input->bufSize) {
+                    commandPointer++;
+                }
+
+                break;
+            }
             default:
                 printf("INVALID COMMAND ON %u COMMAND POINTER", commandPointer);
                 abort();

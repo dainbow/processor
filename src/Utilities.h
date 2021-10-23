@@ -45,4 +45,6 @@ void ScanIn(float* scannedValue);
 
 void DetermiteOutputFile(int* argc, char *argv[], char** outputFile); 
 
+size_t strLenWithoutSpaces(char* countingString);
+
 #endif

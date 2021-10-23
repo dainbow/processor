@@ -16,7 +16,7 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
     case CMD_##cmdName: {                                                                                                           \
         DecompileArgs decArgs = {};                                                                                                 \
                                                                                                                                     \
-        if (cmdNum % MAX_ARGUMENT_AMOUNT) {                                                                                         \
+        if (cmdNum % MAX_COMMAND_TYPES % 2) {                                                                                         \
             decArgs.bytesOfArgs = input->buffer[commandPointer + 1];                                                                \
             decArgs.sizeOfArguments += BYTE_OF_ARGS;                                                                                \
             decArgs.regName[0] = (char)((decArgs.bytesOfArgs & REG_NUM_MASK) + 'a');                                                \

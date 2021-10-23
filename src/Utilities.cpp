@@ -63,3 +63,12 @@ void DetermiteOutputFile(int32_t* argc, char *argv[], char** outputFile) {
 
     strcat(*outputFile, "b.txt");
 }
+
+size_t strLenWithoutSpaces(char* countingString) {
+    size_t counter = 0;
+    for (size_t curChar = 0; countingString[curChar] != '\0'; curChar++) {
+        if (countingString[curChar] != ' ') counter++;
+    }
+
+    return counter;
+}

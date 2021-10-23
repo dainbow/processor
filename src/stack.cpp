@@ -408,8 +408,8 @@ void StackMul(Stack* stack) {
 void StackDiv(Stack* stack) {
     CheckAllStack(stack);
 
-    StackElem divisible = StackPop(stack);
-    StackElem divider   = StackPop(stack);
+    StackElem divider = StackPop(stack);
+    StackElem divisible   = StackPop(stack);
 
     StackPush(stack, divisible / divider * ACCURACY);
 }
