@@ -1,4 +1,4 @@
-push 1000
+push 1000 ;constant number where GMEM begins
 pop cx ;cx is the current GMEM position
 
 push cx
@@ -9,13 +9,16 @@ pop ax ;currentXcoord
 push 0
 pop bx ;currentYcoord
 
+strout Window
 in {dx + -8};max X of window             dx + -8
 in {dx + -4};max Y of window             dx + -4
 mkwdw
 
+strout Coords
 in {dx + -16} ;x cord of circle center   dx + -16
 in {dx + -12} ;y cord of circle center   dx + -12
 
+strout Radius
 in {dx + -20} ;radius of circle          dx + -20
 
 call PrintCircle
@@ -130,3 +133,11 @@ PrintWhitePixel:
     popbyte {cx}
     call NextCx
 ret
+
+Window:
+    db "$Please enter size of window where circle will be printed. X is first, Y is second.$"
+
+Coords:
+    db "$Please enter coord of circle center. X is first, Y is second. Make sure they are right$"
+Radius:
+    db "$Please enter circle radius$"

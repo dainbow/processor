@@ -3,13 +3,13 @@
 #define IF_JUMP_(symbol)                                    \
     StackElem secondOne = StackPop(stack);                  \
     StackElem firstOne = StackPop(stack);                   \
-    printf("First is %d, second is %d, symbol is %s\n", firstOne, secondOne, #symbol); \
                                                             \
     if (firstOne symbol secondOne) {                        \
         commandPointer = SIGNATURE_SIZE + argumentValue;    \
         break;                                              \
     }
 
+//printf("First is %d, second is %d, symbol is %s\n", firstOne, secondOne, #symbol);
 //printf("MOVING TO %d\n", commandPointer); 
 
 
@@ -73,20 +73,16 @@ DEF_CMD_(in, 13, (comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.byte
     if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
 
-        printf("Please enter value to put in %d adress of RAM\n", argumentValue);
         ScanIn(&scannedValue);
 
         *(int32_t*)(stack->memory + argumentValue) = (int32_t)(scannedValue * ACCURACY);
-        printf("I'VE WROTE %d to MEMORY\n", *(int32_t*)(stack->memory + argumentValue));
     }
     else if (commands->buffer[commandPointer + 1] & (REG_FLAG << SHIFT_OF_FLAGS)) {
-        printf("Please enter value to put in %d register\n", commands->buffer[commandPointer + 1] & REG_NUM_MASK);
         ScanIn(&scannedValue);
 
         stack->registers[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int32_t)(scannedValue * ACCURACY);
     }
     else {
-        printf("Please enter value to put in stack\n");
         ScanIn(&scannedValue);
 
         StackPush(stack, (StackElem)(scannedValue * ACCURACY));
