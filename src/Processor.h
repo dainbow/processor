@@ -3,6 +3,7 @@
 #include <TXLib.h>
 #include <io.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "stack.h"
 #include "Utilities.h"
@@ -13,11 +14,13 @@ void ReadCommands(int argc, char* argv[], Text* text);
 void ExecuteCommands(Text* commands, Stack* stack, Stack* retStack);
 void ValidateSignature(Text* text);
 
+//This define calculates shift of command pointer, execute code and shifts
+
 #define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, cmdCode)                                                                    \
 case CMD_##cmdName: {                                                                                                       \
     uint32_t sizeOfArguments = 0;                                                                                           \
     StackElem argumentValue = 0;                                                                                            \
-    if (cmdNum % MAX_COMMAND_TYPES % 2) {                                                                                     \
+    if (cmdNum % MAX_COMMAND_TYPES % 2) {                                                                                   \
         sizeOfArguments += BYTE_OF_ARGS;                                                                                    \
         if (commands->buffer[commandPointer + 1] & ((CONST_FLAG << SHIFT_OF_FLAGS) | (LABEL_FLAG << SHIFT_OF_FLAGS))) {     \
             sizeOfArguments += CONST_ARGUMENT_SIZE;                                                                         \
@@ -35,4 +38,3 @@ case CMD_##cmdName: {                                                           
     break;                                                                                                                  \
 }                                                                                       
 
-//printf("EXECUTE %s WITH ARGUMENT %d AND MOVING RIGHT TO %u\n", #cmdName, argumentValue, COMMAND_SIZE + sizeOfArguments);

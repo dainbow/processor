@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[]) {
     StackCtor(procStack);
-    StackCtor(retStack);
+    StackCtor(retStack);   //Stack for return positions of functions
 
     Text commands = {};
     ReadCommands(argc, argv, &commands);
@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
 
 void ReadCommands(int argc, char* argv[], Text* text) {
     assert(argc > 1 && "PLEASE WRITE AT LEAST 1 COMPILED FILE");
+    assert(text != nullptr);
 
     ReadTextFromFile(text, argv[1]);
     ValidateSignature(text);
@@ -20,8 +21,10 @@ void ReadCommands(int argc, char* argv[], Text* text) {
 
 void ExecuteCommands(Text* commands, Stack* stack, Stack* retStack) {
     assert(commands != nullptr);
+    assert(stack    != nullptr);
+    assert(retStack != nullptr);
 
-    stack->memory           = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(stack->memory[0]));
+    stack->memory            = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(stack->memory[0]));
     StackElem commandPointer = SIGNATURE_SIZE;
 
     while(commands->buffer[commandPointer] != 0) {

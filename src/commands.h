@@ -26,8 +26,10 @@ const int32_t BEGINNING_OF_GMEM = 1000;
 const int32_t MAX_STRING_NAME = 100;
 const int32_t STRING_DIVIDER_SIZE = 1;
 const int32_t QUOTE_SIZE = 1;
+const int32_t BRACKET_BUFFER_SIZE = 10;
+const int32_t TRASH_BUFFER_SIZE = 100;
 
-const char SIGNATURE[] = "DAIN1"; 
+const char SIGNATURE[] = "DAIN7"; 
 const char STRING_DIVIDER = '$';
 
 const int32_t MEM_FLAG = 1;

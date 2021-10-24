@@ -1,0 +1,15 @@
+push 7
+push 12
+jumpDED skip
+strout DedNoToday
+hlt
+skip:
+strout DedToday
+hlt
+
+DedNoToday:
+    db "$Ded lesson not today, it's very bad$"
+
+DedToday:
+    db "$DED LESSON TODAY YEAAAAH$"
+

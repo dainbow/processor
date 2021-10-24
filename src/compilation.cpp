@@ -10,14 +10,11 @@ int main(int32_t argc, char** argv) {
     printf("Compiling file: %s...\n", argv[1]);
     
     ReadTextFromFile(&input, argv[1]);
-    MakeStrings(&input);
-    printf("Ready to compile\n");
-    
+    MakeStrings(&input);   
     ProcessStrings(&input);
     Compile(&input, outputFile);
     Compile(&input, outputFile); 
 
-    printf("OK");
     return 0;
 }
 
@@ -26,10 +23,9 @@ void Compile(Text* text, const char* outName) {
     assert(outName != nullptr);
 
     static uint32_t NUM_OF_COMPILING = 1;
-
-    CompileResult output = {0, (uint8_t*)calloc(text->bufSize + 4, sizeof(output.bytesArray[0]))};
+    CompileResult output             = {0, (uint8_t*)calloc(text->bufSize + 4, sizeof(output.bytesArray[0]))};
     
-    static Labels labels = {};
+    static Labels labels    = {};
     if (NUM_OF_COMPILING > 1) {
         labels.isAllDataRead = 1;
     }
@@ -59,11 +55,11 @@ void Compile(Text* text, const char* outName) {
 }
 
 void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
-    printf("isLabel is %d\nisString is %d\n", isLabel, isString);
+    assert(string != nullptr);
+    assert(comArg != nullptr);
 
     size_t sumLenArgs      = 0;
     comArg->argFlags.bytes = 0;
-
     const char* ptrToArgs  = ShiftAndCheckArgs(string);
 
     if (isLabel)
@@ -85,13 +81,13 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
 }
 
 void ParseBrackets(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-    assert(ptrToArgs != nullptr);
-    assert(comArg != nullptr);
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
     assert(sumLenArgs != nullptr);
 
-    char lbracket[10] = "";
-    char rbracket[10] = "";
-    char trashLetters[100] = "";
+    char lbracket[BRACKET_BUFFER_SIZE]      = "";      
+    char rbracket[BRACKET_BUFFER_SIZE]      = "";
+    char trashLetters[TRASH_BUFFER_SIZE]    = "";
 
     switch (sscanf(ptrToArgs, "%*1[ ]%1[{]%*[a-dx0-9 +.-]%1[}]%[ {}a-dx0-9.+-]", lbracket, rbracket, trashLetters)) {  //Checks if want to write in memory
         case 3:                                                 
@@ -113,35 +109,35 @@ void ParseBrackets(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs)
 }
 
 void ParseRegister(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-    assert(ptrToArgs != nullptr);
-    assert(comArg != nullptr);
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
     assert(sumLenArgs != nullptr);
 
     char reg[10] = "";
 
-    if(sscanf(    ptrToArgs, "%*[ 0-9+.{}-]%[a-dx]", reg) == 1) {            //Checks if there are any register symbols
+    if(sscanf(    ptrToArgs, "%*[ 0-9+.{}-]%[a-dx]",       reg) == 1) {            //Checks if there are any register symbols
         if(sscanf(ptrToArgs, "%*[ 0-9+.{}-]%1[a-d]%*1[x]", reg) != 1) {      //If there are register symbols, 1 register should be in argument
             assert(FAIL && "UNKNOWN FORMAT OF REGISTER");
         }
         else {
             *sumLenArgs += 2;
             
-            comArg->argReg = reg[0] - 'a';
+            comArg->argReg          = reg[0] - 'a';
             comArg->argFlags.bytes |= REG_FLAG;
         }
     }
 }
 
 void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-    assert(ptrToArgs != nullptr);
-    assert(comArg != nullptr);
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
     assert(sumLenArgs != nullptr);
 
     double constant = 0;
-    char trashLetters[100] = "";
+    char trashLetters[TRASH_BUFFER_SIZE] = "";
 
-    if(sscanf(    ptrToArgs, "%*[ a-dx0-9+{-]%[.]", trashLetters) == 1) {                                   //Checks if dot is in argument
-        if (sscanf(ptrToArgs, "%*[ a-dx+{]%lf", &constant) != 1) { //Checks if float number in argument
+    if(sscanf(     ptrToArgs, "%*[ a-dx0-9+{-]%[.]", trashLetters) == 1) {                                   //Checks if dot is in argument
+        if (sscanf(ptrToArgs, "%*[ a-dx+{]%lf",         &constant) != 1) { //Checks if float number in argument
             assert(FAIL && "UNKNOWN FORMAT OF FLOAT NUMBER");
         }
         else {
@@ -159,7 +155,7 @@ void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
         sprintf(constantStr, "%lf", constant);
 
         size_t lenOfFloat = strlen(constantStr);
-        for (size_t curDigit = lenOfFloat - 1; curDigit > 0; curDigit--) {
+        for (size_t curDigit = lenOfFloat - 1; curDigit > 0; curDigit--) {   //Removes from calculating zeros after dot
             if (constantStr[curDigit] != '0') {
                 if (constantStr[curDigit] == '.') lenOfFloat--;
                 break;
@@ -168,17 +164,16 @@ void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
         }
 
         *sumLenArgs += lenOfFloat;
-        printf("SCANED CONST %lf\n", constant);
         comArg->argConst = (StackElem)(constant * ACCURACY);
     }
 }
 
-void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-    char trashLetters[100] = "";
+void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {   //There is always should be plus between const and register
+    char trashLetters[TRASH_BUFFER_SIZE] = "";
 
     if ((comArg->argFlags.bytes & CONST_FLAG) && (comArg->argFlags.bytes & REG_FLAG)) {
         if ((sscanf(ptrToArgs, "%*[ a-dx{]%*[+]%[ 0-9.}-]", trashLetters)) == (sscanf(ptrToArgs, "%*[ 0-9.{-]%*[+]%[ }a-dx]", trashLetters))) {
-        assert(FAIL && "WRONG POSITION OF PLUS");
+            assert(FAIL && "WRONG POSITION OF PLUS");
         }
 
         *sumLenArgs += 1;
@@ -196,17 +191,14 @@ void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
 }
 
 void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
-    char trashLetters[100] = "";
-    printf("PARSING STRING\n");
+    char trashLetters[TRASH_BUFFER_SIZE] = "";
 
     switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", comArg->stringName, trashLetters)) {  
         case 2:
-            printf("Found string \"$%s$\"", comArg->stringName);
             *sumLenArgs += strlen(comArg->stringName) + 2*QUOTE_SIZE + 2*STRING_DIVIDER_SIZE;
             comArg->argFlags.bytes |= STRING_FLAG;
             break;
         case 1:
-            printf("Found string \"$%s$\"", comArg->stringName);
             assert(FAIL && "RIGHT QUOTE NOT FOUND OR RIGHT DOLLAR NOT PLACED");
             break;
         case 0:
@@ -218,8 +210,8 @@ void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
     }
 }
 
-const char* ShiftAndCheckArgs(String* string) {
-    char trashLetters[100] = "";
+const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string to beginning of argument
+    char trashLetters[TRASH_BUFFER_SIZE] = "";
     const char* ptrToArgs = (const char*)string->value + string->lastSpaceBeforeArgs;
     
     if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-\"\"!,$']", trashLetters) & (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
@@ -229,7 +221,7 @@ const char* ShiftAndCheckArgs(String* string) {
     return ptrToArgs;
 }
 
-bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {
+bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Checks if string is a label, not a command
     char trashLetters[100] = "";
     char labelName[MAX_LABEL_NAME] = "";
 

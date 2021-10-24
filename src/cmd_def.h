@@ -1,5 +1,13 @@
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 
+//! Choose new command number correctly: cmdNum % (amount of command types) means:
+//! 0 - processor command without arguments
+//! 1 - processor command with arguments
+//! 2 - assembler command without arguments
+//! 3 - assembler command with argument
+
+
+//This define helps to easily make if jumps
 #define IF_JUMP_(symbol)                                    \
     StackElem secondOne = StackPop(stack);                  \
     StackElem firstOne = StackPop(stack);                   \
@@ -8,10 +16,6 @@
         commandPointer = SIGNATURE_SIZE + argumentValue;    \
         break;                                              \
     }
-
-//printf("First is %d, second is %d, symbol is %s\n", firstOne, secondOne, #symbol);
-//printf("MOVING TO %d\n", commandPointer); 
-
 
 DEF_CMD_(push, 1, ((comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || !(comArgs.argFlags.bytes & (MEM_FLAG | REG_FLAG | CONST_FLAG))),
     if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
@@ -25,17 +29,12 @@ DEF_CMD_(push, 1, ((comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.by
 )
 
 DEF_CMD_(db, 3, (!(comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
-
-
-
 )
 
 DEF_CMD_(drwpc, 4, 1,
-    int maxX = txGetExtentX(); 
+    int32_t maxX = txGetExtentX(); 
 
     for (uint32_t curPixel = 0; *(stack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {
-        //printf("Drawing %u pixel with value %d\n", curPixel, *(stack->memory + BEGINNING_OF_GMEM + curPixel));
-
         COLORREF curColor = RGB(*(stack->memory + BEGINNING_OF_GMEM + curPixel), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 1), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 2));
         txSetPixel((curPixel / 3) % maxX, (curPixel / 3) / maxX, curColor);
     }
@@ -125,11 +124,13 @@ DEF_CMD_(exeDump, 32, 1,
     StackExeDump(commands->buffer, commands->bufSize, commandPointer);
 )
 
-//! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
-
 DEF_CMD_(je, 33, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
     IF_JUMP_(==)
 )
+
+//! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
+//! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
+//! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 
 DEF_CMD_(jne, 37, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
     IF_JUMP_(!=)
@@ -189,6 +190,17 @@ DEF_CMD_(strout, 49, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlag
 
     commandPointer = StackPop(retStack);
     break;
+)
+
+DEF_CMD_(jumpDED, 53, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+    time_t curTimeSec = time(NULL);
+    struct tm *curTime = localtime(&curTimeSec);
+    printf("Today weeday is %d\n", curTime->tm_wday);
+    
+    if ((curTime->tm_wday == 1) || (curTime->tm_wday == 3) || (curTime->tm_wday == 5)) {
+        commandPointer = SIGNATURE_SIZE + argumentValue;
+        break;
+    }
 )
 
 DEF_CMD_(hlt, 0, 1, 

@@ -1,8 +1,0 @@
-push 7
-push 12
-strout          cash
-out
-hlt
-
-cash:
-    db "$CASH$"

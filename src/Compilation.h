@@ -91,21 +91,20 @@ if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length =
         }                                                                                                                                           \
                                                                                                                                                     \
         if (comArgs.argFlags.bytes & STRING_FLAG) {                                                                                                 \
-            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                               \
+            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                              \
             output.bytesCount += STRING_DIVIDER_SIZE;                                                                                               \
                                                                                                                                                     \
-            printf("Length of writing string is %llu\nTHis string is %s\n", currentString.lenOfArgs, comArgs.stringName);                                                                  \
-            for (size_t curChar = 0; curChar < currentString.lenOfArgs - 2*STRING_DIVIDER_SIZE - 2*QUOTE_SIZE; curChar++) {                                                                \
+            for (size_t curChar = 0; curChar < currentString.lenOfArgs - 2*STRING_DIVIDER_SIZE - 2*QUOTE_SIZE; curChar++) {                         \
                 *(output.bytesArray + output.bytesCount) = comArgs.stringName[curChar];                                                             \
                 output.bytesCount++;                                                                                                                \
             }                                                                                                                                       \
                                                                                                                                                     \
-            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                               \
+            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                              \
             output.bytesCount += STRING_DIVIDER_SIZE;                                                                                               \
         }                                                                                                                                           \
                                                                                                                                                     \
     }                                                                                                                                               \
-    printf("CommandPointer is %llu\n", output.bytesCount);                                                                                            \
+    printf("CommandPointer is %llu\n", output.bytesCount);                                                                                          \
 }                                                                                                                                                   \
 else                                                                                                                                                \
 
