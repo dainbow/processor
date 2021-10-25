@@ -8,6 +8,8 @@ int main(int argc, char* argv[]) {
     ReadCommands(argc, argv, &commands);
     ExecuteCommands(&commands, &procStack, &retStack);
 
+    StackDtor(&procStack);
+    StackDtor(&retStack);
     printf("OK\n");
 }
 
@@ -19,12 +21,12 @@ void ReadCommands(int argc, char* argv[], Text* text) {
     ValidateSignature(text);
 }
 
-void ExecuteCommands(Text* commands, Stack* stack, Stack* retStack) {
-    assert(commands != nullptr);
-    assert(stack    != nullptr);
-    assert(retStack != nullptr);
+void ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack) {
+    assert(commands  != nullptr);
+    assert(procStack != nullptr);
+    assert(retStack  != nullptr);
 
-    stack->memory            = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(stack->memory[0]));
+    procStack->memory            = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(procStack->memory[0]));
     StackElem commandPointer = SIGNATURE_SIZE;
 
     while(commands->buffer[commandPointer] != 0) {

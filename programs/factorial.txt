@@ -1,0 +1,30 @@
+strout Welcome
+in ax ;number which factorial will be calculated
+push 1
+pop bx ;place where factorial will be calculated
+
+call Factorial
+push bx
+out
+hlt
+
+Factorial:
+    push ax
+    push bx
+    mul
+    pop bx
+
+    push ax
+    push 1
+    sub
+    pop ax
+    push ax
+    push 1
+    jbe Iteration
+        call Factorial
+    Iteration:
+        ret
+
+Welcome:
+    db "$Please enter number which factorial will be calculated$"
+

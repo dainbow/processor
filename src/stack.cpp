@@ -44,6 +44,8 @@ int32_t StackDtor(Stack* stack) {
 	stack->data -= SHIFT;
 
     free(stack->data);
+    free(stack->memory);
+
     stack->data  = (uint8_t*)FREE_VALUE;
     stack->size  = -1;
 

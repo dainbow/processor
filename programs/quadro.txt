@@ -52,6 +52,7 @@ SolveWithA:
             push 0
             out
             ret
+
         withAwithoutBwithC:
             strout TwoRoots
             push cx
@@ -62,6 +63,7 @@ SolveWithA:
             mul
             out
             ret
+
     withAwithB:
         push cx
         push 0
@@ -71,6 +73,7 @@ SolveWithA:
             push 0
             out
             ret
+
         withAwithBwithC:
             call CalculateD
             push dx
@@ -81,11 +84,13 @@ SolveWithA:
                 je DIsZero
                     strout NoRoots
                     ret
+
                 DIsZero:
                     strout OneRoot
                     call MinusBDivDoubleA
                     out
                     ret
+
             DAboveZero:
                 strout TwoRoots
                 call UseDToCalcRoots
@@ -160,7 +165,7 @@ TwoRoots:
     db "$The equation has two roots$"
 
 OneRoot:
-    db "$The equation has one root$"
+    db "$The equation has one root. And I'm Groot.$"
 
 InfRoots:
     db "$The equation has infinite amount of roots$"

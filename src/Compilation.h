@@ -19,7 +19,11 @@ struct Command {
 };
 
 struct Flags {
-    uint32_t bytes: 5;
+    uint32_t string   : 1;
+    uint32_t label    : 1;
+    uint32_t constant : 1;
+    uint32_t reg      : 1;
+    uint32_t mem      : 1;
 };
 
 struct Arguments {
@@ -29,7 +33,6 @@ struct Arguments {
     char labelName[MAX_LABEL_NAME];
     char stringName[MAX_STRING_NAME];
 };
-
 
 void Compile(Text* text, const char* outName);
 void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString);
@@ -42,67 +45,37 @@ void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenAr
 void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 
+void ImmitCommand(int32_t cmdNum, CompileResult* output);
+void ImmitArgs(   int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString);
+
 const char* ShiftAndCheckArgs(String* string);
 
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer);
 StackElem FindLabelByName(char lblName[], Labels* labels);
 
 #define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, ...)                                                                                                \
-if (((currentString.firstSpaceIdx == strlen(#cmdName)) | (currentString.length == strlen(#cmdName)))                                                \
+if (((currentString.firstSpaceIdx == strlen(#cmdName)) || (currentString.length == strlen(#cmdName)))                                               \
 & !MyStrCmp((const int8_t*)currentString.value, (const int8_t*)#cmdName)) {                                                                         \
     printf("Command name: %s.\n", #cmdName);                                                                                                        \
-    if (cmdNum % MAX_COMMAND_TYPES < 2) {                                                                                                           \
-    *(output.bytesArray + output.bytesCount) = (int8_t)cmdNum;                                                                                      \
-    output.bytesCount += COMMAND_SIZE;                                                                                                              \
-    }                                                                                                                                               \
+    ImmitCommand(cmdNum, &output);                                                                                                                  \
                                                                                                                                                     \
     if((cmdNum % MAX_COMMAND_TYPES) % 2) {                                                                                                          \
-        comArgs.argFlags.bytes |= LABEL_FLAG;                                                                                                       \
+        comArgs.argFlags.label = 1;                                                                                                       \
         bool isLabel = !(cmdArgFilter);                                                                                                             \
-        comArgs.argFlags.bytes = 0;                                                                                                                 \
+        comArgs.argFlags.label = 0;                                                                                                                 \
                                                                                                                                                     \
-        comArgs.argFlags.bytes |= STRING_FLAG;                                                                                                      \
+        comArgs.argFlags.string = 1;                                                                                                      \
         bool isString = !(cmdArgFilter);                                                                                                            \
-        comArgs.argFlags.bytes = 0;                                                                                                                 \
+        comArgs.argFlags.string = 0;                                                                                                                 \
                                                                                                                                                     \
         ParseArgs(&currentString, &comArgs, isLabel, isString);                                                                                     \
                                                                                                                                                     \
-        printf("Arg? %d It is %d\nReg?%d It is %d\nIs to RAM? %d\nLabel is %s\nString is %s\n", comArgs.argFlags.bytes & CONST_FLAG, comArgs.argConst, comArgs.argFlags.bytes & REG_FLAG, comArgs.argReg, comArgs.argFlags.bytes & MEM_FLAG, (comArgs.argFlags.bytes & LABEL_FLAG) ? comArgs.labelName : "NOLABEL", (comArgs.argFlags.bytes & STRING_FLAG) ? comArgs.stringName : "NOSTRING");        \
+        printf("Arg? %u It is %d\nReg?%u It is %d\nIs to RAM? %u\nLabel is %s\nString is %s\n", comArgs.argFlags.constant, comArgs.argConst, comArgs.argFlags.reg, comArgs.argReg, comArgs.argFlags.mem, (comArgs.argFlags.label) ? comArgs.labelName : "NOLABEL", (comArgs.argFlags.string) ? comArgs.stringName : "NOSTRING");        \
         if (cmdArgFilter) {                                                                                                                         \
-            printf("INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                                            \
+            fprintf(stderr, "INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                                   \
             abort();                                                                                                                                \
         }                                                                                                                                           \
-                                                                                                                                                    \
-        printf("Bytes: %u\n", comArgs.argFlags.bytes);                                                                                              \
-                                                                                                                                                    \
-        if (cmdNum % MAX_COMMAND_TYPES < 2) {                                                                                                       \
-            *(output.bytesArray + output.bytesCount) = (uint8_t)(comArgs.argFlags.bytes << SHIFT_OF_FLAGS | comArgs.argReg);                        \
-            output.bytesCount += BYTE_OF_ARGS;                                                                                                      \
-        }                                                                                                                                           \
-                                                                                                                                                    \
-        if (comArgs.argFlags.bytes & CONST_FLAG) {                                                                                                  \
-            *(StackElem*)(output.bytesArray + output.bytesCount) = comArgs.argConst;                                                                \
-            output.bytesCount += CONST_ARGUMENT_SIZE;                                                                                               \
-        }                                                                                                                                           \
-                                                                                                                                                    \
-        if (comArgs.argFlags.bytes & LABEL_FLAG) {                                                                                                  \
-            *(StackElem*)(output.bytesArray + output.bytesCount) = (labels.isAllDataRead) ? FindLabelByName(comArgs.labelName, &labels) : 0;        \
-            output.bytesCount += CONST_ARGUMENT_SIZE;                                                                                               \
-        }                                                                                                                                           \
-                                                                                                                                                    \
-        if (comArgs.argFlags.bytes & STRING_FLAG) {                                                                                                 \
-            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                              \
-            output.bytesCount += STRING_DIVIDER_SIZE;                                                                                               \
-                                                                                                                                                    \
-            for (size_t curChar = 0; curChar < currentString.lenOfArgs - 2*STRING_DIVIDER_SIZE - 2*QUOTE_SIZE; curChar++) {                         \
-                *(output.bytesArray + output.bytesCount) = comArgs.stringName[curChar];                                                             \
-                output.bytesCount++;                                                                                                                \
-            }                                                                                                                                       \
-                                                                                                                                                    \
-            *(output.bytesArray + output.bytesCount) = STRING_DIVIDER;                                                                              \
-            output.bytesCount += STRING_DIVIDER_SIZE;                                                                                               \
-        }                                                                                                                                           \
-                                                                                                                                                    \
+        ImmitArgs(cmdNum, &output, &comArgs, &labels, &currentString);                                                                              \
     }                                                                                                                                               \
     printf("CommandPointer is %llu\n", output.bytesCount);                                                                                          \
 }                                                                                                                                                   \

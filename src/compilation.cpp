@@ -59,7 +59,6 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
     assert(comArg != nullptr);
 
     size_t sumLenArgs      = 0;
-    comArg->argFlags.bytes = 0;
     const char* ptrToArgs  = ShiftAndCheckArgs(string);
 
     if (isLabel)
@@ -74,7 +73,8 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
     }
 
     if (sumLenArgs != string->lenOfArgs) {
-        printf("I have parsed %llu\nI should %llu\n", sumLenArgs, string->lenOfArgs);
+        fprintf(stderr, "I have parsed %llu nonspace chars\n"
+               "I should got  %llu as sum of lengths\n", sumLenArgs, string->lenOfArgs);
 
         assert(FAIL && "SOME ARGUMENTS ARE SUBSTRINGS OF ANOTHER STRINGS");
     }
@@ -94,8 +94,8 @@ void ParseBrackets(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs)
             assert(FAIL && "SOMETHING AFTER BRACKETS");
             break;
         case 2:
-            *sumLenArgs += 2;
-            comArg->argFlags.bytes |= MEM_FLAG;
+            *sumLenArgs += BRACKETS_SIZE;
+            comArg->argFlags.mem = 1;
             break;
         case 1:
             assert(FAIL && "RIGHT BRACKET DIDN'T CLOSE OR UNKNOWN SYMBOLs IN BRACKETS");
@@ -123,7 +123,7 @@ void ParseRegister(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs)
             *sumLenArgs += 2;
             
             comArg->argReg          = reg[0] - 'a';
-            comArg->argFlags.bytes |= REG_FLAG;
+            comArg->argFlags.reg    = 1;
         }
     }
 }
@@ -141,16 +141,16 @@ void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
             assert(FAIL && "UNKNOWN FORMAT OF FLOAT NUMBER");
         }
         else {
-            comArg->argFlags.bytes |= CONST_FLAG;
+            comArg->argFlags.constant = 1;
         }
     }
     else {
         if(sscanf(ptrToArgs, "%*[ a-dx+{]%lf", &constant) == 1) {
-            comArg->argFlags.bytes |= CONST_FLAG;
+            comArg->argFlags.constant = 1;
         }
     }
 
-    if (comArg->argFlags.bytes & CONST_FLAG) {
+    if (comArg->argFlags.constant) {
         char constantStr[MAX_NUMBER_SIZE] = "";
         sprintf(constantStr, "%lf", constant);
 
@@ -171,8 +171,9 @@ void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
 void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {   //There is always should be plus between const and register
     char trashLetters[TRASH_BUFFER_SIZE] = "";
 
-    if ((comArg->argFlags.bytes & CONST_FLAG) && (comArg->argFlags.bytes & REG_FLAG)) {
-        if ((sscanf(ptrToArgs, "%*[ a-dx{]%*[+]%[ 0-9.}-]", trashLetters)) == (sscanf(ptrToArgs, "%*[ 0-9.{-]%*[+]%[ }a-dx]", trashLetters))) {
+    if ((comArg->argFlags.constant) && (comArg->argFlags.reg)) {
+        if ((sscanf(ptrToArgs, "%*[ a-dx{]%*[+]%[ 0-9.}-]", trashLetters)) == 
+            (sscanf(ptrToArgs, "%*[ 0-9.{-]%*[+]%[ }a-dx]", trashLetters))) {
             assert(FAIL && "WRONG POSITION OF PLUS");
         }
 
@@ -183,7 +184,7 @@ void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenAr
 void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
     if (sscanf(ptrToArgs, "%*1[ ]%[a-zA-Z0-9]", comArg->labelName) == 1) {  
         *sumLenArgs += strlen(comArg->labelName);
-        comArg->argFlags.bytes |= LABEL_FLAG;
+        comArg->argFlags.label = 1;
     }
     else {
         assert(FAIL && "LABEL NOT FOUND");
@@ -196,7 +197,7 @@ void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
     switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", comArg->stringName, trashLetters)) {  
         case 2:
             *sumLenArgs += strlen(comArg->stringName) + 2*QUOTE_SIZE + 2*STRING_DIVIDER_SIZE;
-            comArg->argFlags.bytes |= STRING_FLAG;
+            comArg->argFlags.string = 1;
             break;
         case 1:
             assert(FAIL && "RIGHT QUOTE NOT FOUND OR RIGHT DOLLAR NOT PLACED");
@@ -222,12 +223,13 @@ const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string t
 }
 
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Checks if string is a label, not a command
-    char trashLetters[100] = "";
+    char trashLetters[TRASH_BUFFER_SIZE] = "";
     char labelName[MAX_LABEL_NAME] = "";
 
     if (sscanf((const char*)string->value, "%[a-zA-Z0-9]%1[:]", labelName, trashLetters) == 2) { 
         if (strlen(labelName) + 1 == string->length) {
             printf("Found label\n");
+
             if (labels->curLbl < MAX_LABEL_AMOUNT) {
                 if (labels->isAllDataRead == 0) {
                     strcpy(labels->array[labels->curLbl].name, labelName);
@@ -243,7 +245,7 @@ bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Che
                 assert(FAIL && "YOU ARE CRAZY, YOU'VE REACHED MAX AMOUNT OF LABELS");
         }
         else {
-            printf("Strlen is %llu\nI counted %llu\n", strlen(labelName) + 1, string->length);
+            fprintf(stderr, "Strlen is %llu\nI counted %llu\n", strlen(labelName) + 1, string->length);
 
             assert(FAIL && "THERE IS NOTHING SHOULD BE AFTER LABEL");
         }
@@ -263,4 +265,51 @@ StackElem FindLabelByName(char lblName[], Labels* labels) {
 
     assert(FAIL && "LABEL NOT FOUND");
     return 0;
+}
+
+void ImmitCommand(int32_t cmdNum, CompileResult* output) {
+    if (cmdNum % MAX_COMMAND_TYPES < 2) {                                                                                                           
+        *(output->bytesArray + output->bytesCount) = (int8_t)cmdNum;                                                                                      
+        output->bytesCount += COMMAND_SIZE;                                                                                                              
+    } 
+}
+
+void ImmitArgs(int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString) {
+    uint32_t argumentFlags = (comArgs->argFlags.string   << STRING_SHIFT) | 
+                             (comArgs->argFlags.label    << LABEL_SHIFT)  |
+                             (comArgs->argFlags.constant << CONST_SHIFT)  |
+                             (comArgs->argFlags.reg      << REG_SHIFT)    |
+                             (comArgs->argFlags.mem      << MEM_SHIFT); 
+
+    //!ImmitByteOfArg
+    if (cmdNum % MAX_COMMAND_TYPES < 2) {                                                                                                       
+        *(output->bytesArray + output->bytesCount) = (uint8_t)(argumentFlags << SHIFT_OF_FLAGS | comArgs->argReg);                        
+        output->bytesCount += BYTE_OF_ARGS;                                                                                                      
+    }                                                                                                                                           
+
+    //!ImmitConstant                                                                                                                                 
+    if (comArgs->argFlags.constant) {                                                                                                  
+        *(StackElem*)(output->bytesArray + output->bytesCount) = comArgs->argConst;                                                                
+        output->bytesCount += CONST_ARGUMENT_SIZE;                                                                                               
+    }                                                                                                                                           
+
+    //!ImmitLabel                                                                                                                             
+    if (comArgs->argFlags.label) {                                                                                                  
+        *(StackElem*)(output->bytesArray + output->bytesCount) = (labels->isAllDataRead) ? FindLabelByName(comArgs->labelName, labels) : 0;        
+        output->bytesCount += CONST_ARGUMENT_SIZE;                                                                                               
+    }                                                                                                                                           
+
+    //!ImmitString                                                                                                                               
+    if (comArgs->argFlags.string) {                                                                                                 
+        *(output->bytesArray + output->bytesCount) = STRING_DIVIDER;                                                                              
+        output->bytesCount += STRING_DIVIDER_SIZE;                                                                                               
+                                                                                                                                                
+        for (size_t curChar = 0; curChar < currentString->lenOfArgs - 2*STRING_DIVIDER_SIZE - 2*QUOTE_SIZE; curChar++) {                         
+            *(output->bytesArray + output->bytesCount) = comArgs->stringName[curChar];                                                             
+            output->bytesCount++;                                                                                                                
+        }                                                                                                                                       
+                                                                                                                                                
+        *(output->bytesArray + output->bytesCount) = STRING_DIVIDER;                                                                              
+        output->bytesCount += STRING_DIVIDER_SIZE;                                                                                               
+    }
 }

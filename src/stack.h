@@ -103,7 +103,7 @@ struct Stack {
     int32_t capacity;
     uint8_t* data;
 
-    StackElem registers[MAX_REGISTER_AMOUNT];
+    StackElem regs[MAX_REGISTER_AMOUNT];
     int8_t* memory;
 #if (STACK_DEBUG >= MID_LEVEL)
     canary canaryRight;

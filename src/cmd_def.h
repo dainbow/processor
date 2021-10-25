@@ -9,114 +9,150 @@
 
 //This define helps to easily make if jumps
 #define IF_JUMP_(symbol)                                    \
-    StackElem secondOne = StackPop(stack);                  \
-    StackElem firstOne = StackPop(stack);                   \
+    StackElem secondOne = StackPop(procStack);                  \
+    StackElem firstOne = StackPop(procStack);                   \
                                                             \
     if (firstOne symbol secondOne) {                        \
         commandPointer = SIGNATURE_SIZE + argumentValue;    \
         break;                                              \
     }
 
-DEF_CMD_(push, 1, ((comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || !(comArgs.argFlags.bytes & (MEM_FLAG | REG_FLAG | CONST_FLAG))),
-    if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
+DEF_CMD_(push, 1, ((comArgs.argFlags.label) || 
+                  (comArgs.argFlags.string) || 
+                  !(comArgs.argFlags.mem    || comArgs.argFlags.reg || comArgs.argFlags.constant)),
+
+    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
 
-        StackPush(stack, *(StackElem*)(stack->memory + argumentValue));
+        StackPush(procStack, *(StackElem*)(procStack->memory + argumentValue));
     }
     else {
-        StackPush(stack, argumentValue);
+        StackPush(procStack, argumentValue);
     }
 )
 
-DEF_CMD_(db, 3, (!(comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(db, 3, (!(comArgs.argFlags.string) || 
+                   (comArgs.argFlags.label) || 
+                   (comArgs.argFlags.reg)   || 
+                   (comArgs.argFlags.mem)   || 
+                   (comArgs.argFlags.constant)), 
 )
 
 DEF_CMD_(drwpc, 4, 1,
     int32_t maxX = txGetExtentX(); 
 
-    for (uint32_t curPixel = 0; *(stack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {
-        COLORREF curColor = RGB(*(stack->memory + BEGINNING_OF_GMEM + curPixel), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 1), *(stack->memory + BEGINNING_OF_GMEM + curPixel + 2));
+    for (uint32_t curPixel = 0; *(procStack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {
+        COLORREF curColor = RGB(*(procStack->memory + BEGINNING_OF_GMEM + curPixel), *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 1), *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 2));
         txSetPixel((curPixel / 3) % maxX, (curPixel / 3) / maxX, curColor);
     }
 )
 
-DEF_CMD_(pop, 5, (comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (!((!(comArgs.argFlags.bytes & CONST_FLAG)) | (comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & CONST_FLAG) | !(comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & MEM_FLAG) | (!(comArgs.argFlags.bytes & REG_FLAG)) | (!(comArgs.argFlags.bytes & CONST_FLAG)))), 
-    if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
+DEF_CMD_(pop, 5, (comArgs.argFlags.label)  || 
+                 (comArgs.argFlags.string) || 
+                 (!((!(comArgs.argFlags.constant)) ||  (comArgs.argFlags.mem)  || (  comArgs.argFlags.reg))) || 
+                 (!((comArgs.argFlags.constant)    || !(comArgs.argFlags.mem)  || (  comArgs.argFlags.reg))) || 
+                 ((!(comArgs.argFlags.constant))   || !((comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
+    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
         
-        *(StackElem*)(stack->memory + argumentValue) = StackPop(stack);
+        *(StackElem*)(procStack->memory + argumentValue) = StackPop(procStack);
     }
-    else if (commands->buffer[commandPointer + 1] & (REG_FLAG << SHIFT_OF_FLAGS)) {
-        stack->registers[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = StackPop(stack);
+    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
+        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = StackPop(procStack);
     }
     else
-        StackPop(stack);
+        StackPop(procStack);
 )
 
 DEF_CMD_(add, 8, 1,  
-    StackAdd(stack);
+    StackAdd(procStack);
 )
 
-DEF_CMD_(jump, 9, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jump, 9, (!(comArgs.argFlags.label)    || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)),
+
     commandPointer = SIGNATURE_SIZE + argumentValue;
     break;
 )
 
 DEF_CMD_(sub, 12, 1,  
-    StackSub(stack);
+    StackSub(procStack);
 )
 
-DEF_CMD_(in, 13, (comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (!((!(comArgs.argFlags.bytes & CONST_FLAG)) | (comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & CONST_FLAG) | !(comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & MEM_FLAG) | (!(comArgs.argFlags.bytes & REG_FLAG)) | (!(comArgs.argFlags.bytes & CONST_FLAG)))), 
+DEF_CMD_(in, 13, (comArgs.argFlags.label) || 
+                (comArgs.argFlags.string) || 
+                (!((!(comArgs.argFlags.constant))   ||  (comArgs.argFlags.mem) || (comArgs.argFlags.reg))) || 
+                (!((  comArgs.argFlags.constant)    || !(comArgs.argFlags.mem) || (comArgs.argFlags.reg)))   || 
+                (!((!(comArgs.argFlags.constant))   ||  (comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
     float scannedValue = 0;
     
-    if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
+    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
 
         ScanIn(&scannedValue);
 
-        *(int32_t*)(stack->memory + argumentValue) = (int32_t)(scannedValue * ACCURACY);
+        *(int32_t*)(procStack->memory + argumentValue) = (int32_t)(scannedValue * ACCURACY);
     }
-    else if (commands->buffer[commandPointer + 1] & (REG_FLAG << SHIFT_OF_FLAGS)) {
+    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
         ScanIn(&scannedValue);
 
-        stack->registers[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int32_t)(scannedValue * ACCURACY);
+        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int32_t)(scannedValue * ACCURACY);
     }
     else {
         ScanIn(&scannedValue);
 
-        StackPush(stack, (StackElem)(scannedValue * ACCURACY));
+        StackPush(procStack, (StackElem)(scannedValue * ACCURACY));
     }
 )
 
 DEF_CMD_(mul, 16, 1, 
-    StackMul(stack);
+    StackMul(procStack);
 )
 
-DEF_CMD_(ja, 17, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(ja, 17, (!(comArgs.argFlags.label)    || 
+                  (comArgs.argFlags.string)    || 
+                  (comArgs.argFlags.reg)  || 
+                  (comArgs.argFlags.mem)       || 
+                  (comArgs.argFlags.constant)), 
     IF_JUMP_(>)
 )
 
 DEF_CMD_(div, 20, 1, 
-    StackDiv(stack);
+    StackDiv(procStack);
 )
 
-DEF_CMD_(jae, 21, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jae, 21, (!(comArgs.argFlags.label)    || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     IF_JUMP_(>=)
 )
 
 DEF_CMD_(out, 24, 1, 
-    StackOut(stack);
+    StackOut(procStack);
 )
 
-DEF_CMD_(jb, 25, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jb, 25, (!(comArgs.argFlags.label)     || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     IF_JUMP_(<)
 )
 
 DEF_CMD_(dump, 28, 1, 
-    StackDump(stack LOCATION());
+    StackDump(procStack LOCATION());
 )
 
-DEF_CMD_(jbe, 29, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jbe, 29, (!(comArgs.argFlags.label)    || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     IF_JUMP_(<=)
 )
 
@@ -124,7 +160,11 @@ DEF_CMD_(exeDump, 32, 1,
     StackExeDump(commands->buffer, commands->bufSize, commandPointer);
 )
 
-DEF_CMD_(je, 33, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(je, 33, (!(comArgs.argFlags.label)     || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     IF_JUMP_(==)
 )
 
@@ -132,13 +172,17 @@ DEF_CMD_(je, 33, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.by
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 
-DEF_CMD_(jne, 37, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jne, 37, (!(comArgs.argFlags.label)    || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     IF_JUMP_(!=)
 )
 
 DEF_CMD_(mkwdw, 40, 1,  
-    int32_t yCoord = *(StackElem*)(stack->memory + BEGINNING_OF_GMEM - 4) / ACCURACY;
-    int32_t xCoord = *(StackElem*)(stack->memory + BEGINNING_OF_GMEM - 8) / ACCURACY;
+    int32_t yCoord = *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 4) / ACCURACY;
+    int32_t xCoord = *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 8) / ACCURACY;
 
     assert(yCoord > 0);
     assert(xCoord > 0);
@@ -146,24 +190,32 @@ DEF_CMD_(mkwdw, 40, 1,
     txCreateWindow(xCoord, yCoord);
 )
 
-DEF_CMD_(call, 41, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(call, 41, (!(comArgs.argFlags.label)   || 
+                    (comArgs.argFlags.string)   || 
+                    (comArgs.argFlags.reg) || 
+                    (comArgs.argFlags.mem)      || 
+                    (comArgs.argFlags.constant)), 
     StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments);
 
     commandPointer = SIGNATURE_SIZE + argumentValue;
     break;
 )
 
-DEF_CMD_(popbyte, 45, (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & LABEL_FLAG) || (!((!(comArgs.argFlags.bytes & CONST_FLAG)) | (comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & CONST_FLAG) | !(comArgs.argFlags.bytes & MEM_FLAG) | (comArgs.argFlags.bytes & REG_FLAG))) || (!((comArgs.argFlags.bytes & MEM_FLAG) | (!(comArgs.argFlags.bytes & REG_FLAG)) | (!(comArgs.argFlags.bytes & CONST_FLAG)))), 
-    if (commands->buffer[commandPointer + 1] & (MEM_FLAG << SHIFT_OF_FLAGS)) {
+DEF_CMD_(popbyte, 45, (comArgs.argFlags.string) || 
+                       (comArgs.argFlags.label) || 
+                       (!((!(comArgs.argFlags.constant)) ||   (comArgs.argFlags.mem) ||   (comArgs.argFlags.reg))) || 
+                       (!((comArgs.argFlags.constant)    ||  !(comArgs.argFlags.mem) ||   (comArgs.argFlags.reg))) || 
+                       ((!(comArgs.argFlags.constant))   || !((comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
+    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
         argumentValue /= ACCURACY;
         
-        *(stack->memory + argumentValue) = (uint8_t)(StackPop(stack) / ACCURACY);
+        *(procStack->memory + argumentValue) = (uint8_t)(StackPop(procStack) / ACCURACY);
     }
-    else if (commands->buffer[commandPointer + 1] & (REG_FLAG << SHIFT_OF_FLAGS)) {
-        stack->registers[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int8_t)(StackPop(stack) / ACCURACY);
+    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
+        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int8_t)(StackPop(procStack) / ACCURACY);
     }
     else
-        StackPop(stack);
+        StackPop(procStack);
 )
 
 DEF_CMD_(ret, 44, 1, 
@@ -172,12 +224,16 @@ DEF_CMD_(ret, 44, 1,
 )
 
 DEF_CMD_(froot, 48, 1, 
-    double root = StackPop(stack) / ACCURACY;
+    double root = StackPop(procStack) / ACCURACY;
     root = sqrt(root);
-    StackPush(stack, (StackElem)(root * ACCURACY));
+    StackPush(procStack, (StackElem)(root * ACCURACY));
 )
 
-DEF_CMD_(strout, 49, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(strout, 49, (!(comArgs.argFlags.label)   || 
+                      (comArgs.argFlags.string)   || 
+                      (comArgs.argFlags.reg) || 
+                      (comArgs.argFlags.mem)      || 
+                      (comArgs.argFlags.constant)), 
     StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments);
     commandPointer = SIGNATURE_SIZE + argumentValue + STRING_DIVIDER_SIZE;
     char curChar = 0;
@@ -192,7 +248,11 @@ DEF_CMD_(strout, 49, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlag
     break;
 )
 
-DEF_CMD_(jumpDED, 53, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFlags.bytes & STRING_FLAG) || (comArgs.argFlags.bytes & REG_FLAG) || (comArgs.argFlags.bytes & MEM_FLAG) || (comArgs.argFlags.bytes & CONST_FLAG)), 
+DEF_CMD_(jumpDED, 53, (!(comArgs.argFlags.label)     || 
+                    (comArgs.argFlags.string)        || 
+                    (comArgs.argFlags.reg)      || 
+                    (comArgs.argFlags.mem)           || 
+                    (comArgs.argFlags.constant)), 
     time_t curTimeSec = time(NULL);
     struct tm *curTime = localtime(&curTimeSec);
     printf("Today weeday is %d\n", curTime->tm_wday);
@@ -204,7 +264,6 @@ DEF_CMD_(jumpDED, 53, (!(comArgs.argFlags.bytes & LABEL_FLAG) || (comArgs.argFla
 )
 
 DEF_CMD_(hlt, 0, 1, 
-    
 )
 
 #undef IF_JUMP_
