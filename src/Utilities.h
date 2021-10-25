@@ -47,4 +47,6 @@ void DetermiteOutputFile(int* argc, char *argv[], char** outputFile);
 
 size_t strLenWithoutSpaces(char* countingString);
 
+bool MyLblCmp(const int8_t* str1, const int8_t* str2);
+
 #endif

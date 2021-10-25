@@ -52,6 +52,7 @@ const char* ShiftAndCheckArgs(String* string);
 
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer);
 StackElem FindLabelByName(char lblName[], Labels* labels);
+void FillLabelsPoison(Labels* labels);
 
 bool PushArgsFilter(Flags argFlags);
 bool DbArgsFilter(  Flags argFlags);

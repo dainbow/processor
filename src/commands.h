@@ -41,8 +41,8 @@ const int32_t STRING_SHIFT   = 4;
 const int32_t REG_NUM_MASK   = (1) | (1 << 1) | (1 << 2);
 
 struct Label {
-    char name[MAX_LABEL_NAME];
-    int64_t go = -1;
+    uint8_t* name;
+    int64_t go;
 };
 
 struct Labels {

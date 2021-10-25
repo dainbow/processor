@@ -37,7 +37,7 @@ int main(int32_t argc, char** argv) {
 
     printf("Compiling to %s...\n", outputFile);
 
-    Text input = {};
+    static Text input = {};
     printf("Compiling file: %s...\n", argv[1]);
     
     ReadTextFromFile(&input, argv[1]);
@@ -60,6 +60,9 @@ void Compile(Text* text, const char* outName) {
     if (NUM_OF_COMPILING > 1) {
         labels.isAllDataRead = 1;
     }
+    else {
+        FillLabelsPoison(&labels);
+    }
 
     for(uint32_t curString = 0; curString < text->strAmount; curString++) {  
         Arguments comArgs    = {};
@@ -69,8 +72,8 @@ void Compile(Text* text, const char* outName) {
         }
 
         if (IfLabel(&currentString, &labels, output.bytesCount) != 1) {
-        #include "cmd_def.h"
-        {printf("UNKNOWN COMMAND ON %u LINE\n", curString);
+            #include "cmd_def.h"
+            {printf("UNKNOWN COMMAND ON %u LINE\n", curString);
         abort();}
         } 
     }
@@ -236,9 +239,10 @@ void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
     assert(sumLenArgs != nullptr);
     char trashLetters[TRASH_BUFFER_SIZE] = "";
 
-    switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", comArg->stringName, trashLetters)) {  
+    switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", 
+            comArg->stringName, trashLetters)) {  
         case 2:
-            *sumLenArgs += strlen(comArg->stringName) + 2*QUOTE_SIZE + 2*STRING_DIVIDER_SIZE;
+            *sumLenArgs += strlen(comArg->stringName) + 2 * (QUOTE_SIZE + STRING_DIVIDER_SIZE);
             comArg->argFlags.string = 1;
             break;
         case 1:
@@ -259,7 +263,8 @@ const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string t
     char trashLetters[TRASH_BUFFER_SIZE] = "";
     const char* ptrToArgs = (const char*)string->value + string->lastSpaceBeforeArgs;
     
-    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-\"\"!,$']", trashLetters) & (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
+    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-\"\"!,$']", trashLetters) & 
+      (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
         assert(FAIL && "UNKNOWN LETTERS IN ARGUMENT");
     }
 
@@ -273,15 +278,15 @@ bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Che
     
     char trashLetters[TRASH_BUFFER_SIZE] = "";
     char labelName[MAX_LABEL_NAME] = "";
+    size_t labelLength = 0;
 
+    printf("Found label\n");
     if (sscanf((const char*)string->value, "%[a-zA-Z0-9]%1[:]", labelName, trashLetters) == 2) { 
-        if (strlen(labelName) + 1 == string->length) {
-            printf("Found label\n");
-
+        if ((labelLength = strlen(labelName) + 1) == string->length) {
             if (labels->curLbl < MAX_LABEL_AMOUNT) {
                 if (labels->isAllDataRead == 0) {
-                    strcpy(labels->array[labels->curLbl].name, labelName);
-                    labels->array[labels->curLbl].go = curCommandPointer;
+                    labels->array[labels->curLbl].name = string->value;
+                    labels->array[labels->curLbl].go   = curCommandPointer;
                     labels->curLbl++;
 
                     printf("%u label name is \"%s\"\n", labels->curLbl, labels->array[labels->curLbl - 1].name);
@@ -306,8 +311,8 @@ StackElem FindLabelByName(char lblName[], Labels* labels) {
     assert(lblName != nullptr);
     assert(labels  != nullptr);
 
-    for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
-        if(strcmp(lblName, labels->array[curLbl].name) == 0) {
+    for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) && (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
+        if (MyLblCmp((const int8_t*)lblName, (const int8_t*)labels->array[curLbl].name) == 0) {
             printf("Label %s goes to %lld ip\n", lblName, labels->array[curLbl].go);
 
             return (StackElem)labels->array[curLbl].go;
@@ -353,7 +358,8 @@ void ImmitArgs(int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels
         output->bytesCount += CONST_ARGUMENT_SIZE;                                                                                               
     }                                                                                                                                           
 
-    //!ImmitLabel                                                                                                                             
+    //!ImmitLabel  
+    printf("IMMITING LABEL\n");                                                                                                                          
     if (comArgs->argFlags.label) {                                                                                                  
         *(StackElem*)(output->bytesArray + output->bytesCount) = (labels->isAllDataRead) ? FindLabelByName(comArgs->labelName, labels) : 0;        
         output->bytesCount += CONST_ARGUMENT_SIZE;                                                                                               
@@ -414,4 +420,10 @@ bool JumpArgsFilter(Flags argFlags) {
 
 bool NoArgsFilter  (Flags argFlags) {
     return 1;
+}
+
+void FillLabelsPoison(Labels* labels) {
+    for (uint32_t curLbl = 0; curLbl < MAX_LABEL_AMOUNT; curLbl++) {
+        labels->array[curLbl].go = -1;
+    }
 }
