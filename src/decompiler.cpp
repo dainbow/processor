@@ -68,7 +68,7 @@ void Decompile(Text* input, char* outputfile) {
 int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels) {
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) && (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(cmdPtr == labels->array[curLbl].go) {
-            printf("Label %s goes to %d ip(Its number's %u)\n", labels->array[curLbl].name, labels->array[curLbl].go, curLbl);
+            printf("Label %s goes to %ld ip(Its number's %u)\n", labels->array[curLbl].name, labels->array[curLbl].go, curLbl);
 
             return curLbl;
         }

@@ -1,4 +1,35 @@
 #include "Compilation.h"
+
+#define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, ...)                                                                                                \
+if (((currentString.firstSpaceIdx == strlen(#cmdName)) || (currentString.length == strlen(#cmdName)))                                               \
+& !MyStrCmp((const int8_t*)currentString.value, (const int8_t*)#cmdName)) {                                                                         \
+    printf("Command name: %s.\n", #cmdName);                                                                                                        \
+    ImmitCommand(cmdNum, &output);                                                                                                                  \
+                                                                                                                                                    \
+    if((cmdNum % MAX_COMMAND_TYPES) % 2) {                                                                                                          \
+        bool isLabel  = cmdArgFilter({0, 1, 0, 0, 0});                                                                                              \
+        bool isString = cmdArgFilter({1, 0, 0, 0, 0});                                                                                              \
+        ParseArgs(&currentString, &comArgs, isLabel, isString);                                                                                     \
+                                                                                                                                                    \
+        printf("Arg? %u It is %d\n"                                                                                                                 \
+               "Reg?%u It is %d\n"                                                                                                                  \
+               "Is to RAM? %u\n"                                                                                                                    \
+               "Label is %s\n"                                                                                                                      \
+               "String is %s\n",                                                                                                                    \
+                comArgs.argFlags.constant, comArgs.argConst,                                                                                        \
+                comArgs.argFlags.reg, comArgs.argReg,                                                                                               \
+                comArgs.argFlags.mem,                                                                                                               \
+               (comArgs.argFlags.label) ? comArgs.labelName : "NOLABEL",                                                                            \
+               (comArgs.argFlags.string) ? comArgs.stringName : "NOSTRING");                                                                        \
+        if (cmdArgFilter(comArgs.argFlags) == 0) {                                                                                                 \
+            fprintf(stderr, "INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                                   \
+            abort();                                                                                                                                \
+        }                                                                                                                                           \
+        ImmitArgs(cmdNum, &output, &comArgs, &labels, &currentString);                                                                              \
+    }                                                                                                                                               \
+    printf("CommandPointer is %llu\n", output.bytesCount);                                                                                          \
+}                                                                                                                                                   \
+else    
                                                                                                               
 int main(int32_t argc, char** argv) {
     char* outputFile = 0;
@@ -169,6 +200,10 @@ void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
 }
 
 void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {   //There is always should be plus between const and register
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
+    assert(sumLenArgs != nullptr);
+    
     char trashLetters[TRASH_BUFFER_SIZE] = "";
 
     if ((comArg->argFlags.constant) && (comArg->argFlags.reg)) {
@@ -182,6 +217,10 @@ void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenAr
 }
 
 void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
+    assert(sumLenArgs != nullptr);
+    
     if (sscanf(ptrToArgs, "%*1[ ]%[a-zA-Z0-9]", comArg->labelName) == 1) {  
         *sumLenArgs += strlen(comArg->labelName);
         comArg->argFlags.label = 1;
@@ -192,6 +231,9 @@ void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
 }
 
 void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
+    assert(ptrToArgs  != nullptr);
+    assert(comArg     != nullptr);
+    assert(sumLenArgs != nullptr);
     char trashLetters[TRASH_BUFFER_SIZE] = "";
 
     switch (sscanf(ptrToArgs, "%*1[ ]%*1[\"]%*1[$]%[a-zA-Z0-9!'., ]%*1[$]%1[\"]", comArg->stringName, trashLetters)) {  
@@ -212,6 +254,8 @@ void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs) {
 }
 
 const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string to beginning of argument
+    assert(string != nullptr);
+    
     char trashLetters[TRASH_BUFFER_SIZE] = "";
     const char* ptrToArgs = (const char*)string->value + string->lastSpaceBeforeArgs;
     
@@ -223,6 +267,10 @@ const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string t
 }
 
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Checks if string is a label, not a command
+    assert(string != nullptr);
+    assert(labels != nullptr);
+    assert(isfinite(curCommandPointer));
+    
     char trashLetters[TRASH_BUFFER_SIZE] = "";
     char labelName[MAX_LABEL_NAME] = "";
 
@@ -255,6 +303,9 @@ bool IfLabel(String* string, Labels* labels, size_t curCommandPointer) {   //Che
 }
 
 StackElem FindLabelByName(char lblName[], Labels* labels) {
+    assert(lblName != nullptr);
+    assert(labels  != nullptr);
+
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) || (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(strcmp(lblName, labels->array[curLbl].name) == 0) {
             printf("Label %s goes to %lld ip\n", lblName, labels->array[curLbl].go);
@@ -268,6 +319,9 @@ StackElem FindLabelByName(char lblName[], Labels* labels) {
 }
 
 void ImmitCommand(int32_t cmdNum, CompileResult* output) {
+    assert(isfinite(cmdNum));
+    assert(output != nullptr);
+
     if (cmdNum % MAX_COMMAND_TYPES < 2) {                                                                                                           
         *(output->bytesArray + output->bytesCount) = (int8_t)cmdNum;                                                                                      
         output->bytesCount += COMMAND_SIZE;                                                                                                              
@@ -275,6 +329,12 @@ void ImmitCommand(int32_t cmdNum, CompileResult* output) {
 }
 
 void ImmitArgs(int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString) {
+    assert(isfinite(cmdNum));
+    assert(output  != nullptr);
+    assert(comArgs != nullptr);
+    assert(labels  != nullptr);
+    assert(currentString != nullptr);  
+    
     uint32_t argumentFlags = (comArgs->argFlags.string   << STRING_SHIFT) | 
                              (comArgs->argFlags.label    << LABEL_SHIFT)  |
                              (comArgs->argFlags.constant << CONST_SHIFT)  |
@@ -312,4 +372,46 @@ void ImmitArgs(int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels
         *(output->bytesArray + output->bytesCount) = STRING_DIVIDER;                                                                              
         output->bytesCount += STRING_DIVIDER_SIZE;                                                                                               
     }
+}
+
+bool PushArgsFilter(Flags argFlags) {
+    if ((argFlags.label)  || 
+        (argFlags.string) || 
+       !(argFlags.mem     || argFlags.reg || argFlags.constant))
+       return 0;
+    return 1;
+}
+
+bool DbArgsFilter(Flags argFlags) {
+    if (! (argFlags.string) || 
+          (argFlags.label)  || 
+          (argFlags.reg)    || 
+          (argFlags.mem)    || 
+          (argFlags.constant))
+        return 0;
+    return 1;
+}
+
+bool PopArgsFilter(Flags argFlags) {
+    if ((  argFlags.label)  || 
+        (  argFlags.string) || 
+        (( argFlags.constant)   &&  (!argFlags.mem)   &&  (!argFlags.reg))  || 
+        ((!argFlags.constant)   &&   (argFlags.mem)   &&  (!argFlags.reg))  || 
+        ((!argFlags.constant)   &&  (!argFlags.mem)   &&  (!argFlags.reg)))
+        return 0;
+    return 1;
+}
+
+bool JumpArgsFilter(Flags argFlags) {
+    if (!(argFlags.label)     || 
+         (argFlags.string)    || 
+         (argFlags.reg)       || 
+         (argFlags.mem)       || 
+         (argFlags.constant))
+        return 0;
+    return 1;
+}
+
+bool NoArgsFilter  (Flags argFlags) {
+    return 1;
 }

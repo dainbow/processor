@@ -12,7 +12,7 @@ pop bx ;currentYcoord
 strout Window
 in {dx + -8};max X of window             dx + -8
 in {dx + -4};max Y of window             dx + -4
-mkwdw
+mkwnd
 
 strout Coords
 in {dx + -16} ;x cord of circle center   dx + -16

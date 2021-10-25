@@ -9,162 +9,179 @@
 
 //This define helps to easily make if jumps
 #define IF_JUMP_(symbol)                                    \
-    StackElem secondOne = StackPop(procStack);                  \
-    StackElem firstOne = StackPop(procStack);                   \
+    StackElem secondOne = POPPED_VALUE;                     \
+    StackElem firstOne  = POPPED_VALUE;                     \
                                                             \
     if (firstOne symbol secondOne) {                        \
-        commandPointer = SIGNATURE_SIZE + argumentValue;    \
-        break;                                              \
+        JUMP_TO(COMMAND_ARGUMENT);                          \
     }
 
-DEF_CMD_(push, 1, ((comArgs.argFlags.label) || 
-                  (comArgs.argFlags.string) || 
-                  !(comArgs.argFlags.mem    || comArgs.argFlags.reg || comArgs.argFlags.constant)),
+#define IF_USE_MEMORY   if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS))
+#define IF_USE_REGISTER if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS))
 
-    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
-        argumentValue /= ACCURACY;
+#define COMMAND_ARGUMENT argumentValue
 
-        StackPush(procStack, *(StackElem*)(procStack->memory + argumentValue));
+#define GET_DATA_FROM_MEMORY(MEMORY_ADRESS) *(StackElem*)(procStack->memory + MEMORY_ADRESS / ACCURACY)
+#define GET_BYTE_FROM_MEMORY(MEMORY_ADRESS) *(procStack->memory + MEMORY_ADRESS / ACCURACY)
+
+#define GET_REGISTER_NUMBER commands->buffer[commandPointer + 1] & REG_NUM_MASK
+#define GET_DATA_FROM_REGISTER(REGISTER_NUMBER) procStack->regs[REGISTER_NUMBER]
+
+#define PUSH_TO_STACK(VALUE) StackPush(procStack, VALUE)
+
+#define STACK_ADD      StackAdd(procStack)
+#define STACK_SUB      StackSub(procStack)
+#define STACK_MUL      StackMul(procStack)
+#define STACK_DIV      StackDiv(procStack)
+#define STACK_OUT      StackOut(procStack)
+#define STACK_DUMP     StackDump(procStack LOCATION())
+#define STACK_EXE_DUMP StackExeDump(commands->buffer, commands->bufSize, commandPointer)
+
+#define X_WINDOW *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 8) / ACCURACY
+#define Y_WINDOW *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 4) / ACCURACY
+#define CREATE_WINDOW(X, Y) txCreateWindow(X, Y)
+
+#define POPPED_VALUE                StackPop(procStack) 
+#define BYTE_POPPED_VALUE (uint8_t)(StackPop(procStack) / ACCURACY)
+
+#define STR_OUT(STRING_ADRESS)                                                  \
+    REMEMBER_WHERE_TO_RETURN;                                                    \
+    commandPointer = SIGNATURE_SIZE + STRING_ADRESS + STRING_DIVIDER_SIZE;      \
+    char curChar = 0;                                                           \
+                                                                                \
+    while ((curChar = commands->buffer[commandPointer]) != '$') {               \
+        putchar(curChar);                                                       \
+        commandPointer++;                                                       \
+    }                                                                           \
+    putchar('\n');                                                              \
+                                                                                \
+    RETURN                                                                      \
+
+#define SQRT_FROM_STACK                                 \
+    double root = StackPop(procStack) / ACCURACY;       \
+    root = sqrt(root);                                  \
+    StackPush(procStack, (StackElem)(root * ACCURACY))
+
+
+#define REMEMBER_WHERE_TO_RETURN StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments)
+#define RETURN                              \
+    commandPointer = StackPop(retStack);    \
+    break
+
+#define SCANNED_VALUE (int32_t)(scannedValue * ACCURACY)
+#define INPUT_SCAN                                      \
+    float scannedValue = 0;                             \
+    ScanIn(&scannedValue)
+
+#define JUMP_TO(VALUE)                                  \
+    commandPointer = SIGNATURE_SIZE + argumentValue;    \
+    break 
+
+#define IF_TODAY_DED                                                                    \
+    time_t curTimeSec  = time(NULL);                                                    \
+    struct tm *curTime = localtime(&curTimeSec);                                        \
+    if ((curTime->tm_wday == 1) || (curTime->tm_wday == 3) || (curTime->tm_wday == 5))  
+
+#define DISPLAY_GMEMORY                                                                                            \
+    int32_t maxX = txGetExtentX();                                                                               \
+    for (uint32_t curPixel = 0; *(procStack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {      \
+        COLORREF curColor = RGB(*(procStack->memory + BEGINNING_OF_GMEM + curPixel),                             \
+                                *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 1),                         \
+                                *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 2));                        \
+        txSetPixel((curPixel / 3) % maxX, (curPixel / 3) / maxX, curColor);                                      \
+    }
+
+DEF_CMD_(push, 1, PushArgsFilter,
+    IF_USE_MEMORY {
+        PUSH_TO_STACK(GET_DATA_FROM_MEMORY(COMMAND_ARGUMENT));
     }
     else {
-        StackPush(procStack, argumentValue);
+        PUSH_TO_STACK(COMMAND_ARGUMENT);
     }
 )
 
-DEF_CMD_(db, 3, (!(comArgs.argFlags.string) || 
-                   (comArgs.argFlags.label) || 
-                   (comArgs.argFlags.reg)   || 
-                   (comArgs.argFlags.mem)   || 
-                   (comArgs.argFlags.constant)), 
+DEF_CMD_(db, 3, DbArgsFilter, 
 )
 
-DEF_CMD_(drwpc, 4, 1,
-    int32_t maxX = txGetExtentX(); 
-
-    for (uint32_t curPixel = 0; *(procStack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {
-        COLORREF curColor = RGB(*(procStack->memory + BEGINNING_OF_GMEM + curPixel), *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 1), *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 2));
-        txSetPixel((curPixel / 3) % maxX, (curPixel / 3) / maxX, curColor);
-    }
+DEF_CMD_(drwpc, 4, NoArgsFilter,
+    DISPLAY_GMEMORY
 )
 
-DEF_CMD_(pop, 5, (comArgs.argFlags.label)  || 
-                 (comArgs.argFlags.string) || 
-                 (!((!(comArgs.argFlags.constant)) ||  (comArgs.argFlags.mem)  || (  comArgs.argFlags.reg))) || 
-                 (!((comArgs.argFlags.constant)    || !(comArgs.argFlags.mem)  || (  comArgs.argFlags.reg))) || 
-                 ((!(comArgs.argFlags.constant))   || !((comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
-    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
-        argumentValue /= ACCURACY;
-        
-        *(StackElem*)(procStack->memory + argumentValue) = StackPop(procStack);
+DEF_CMD_(pop, 5, PopArgsFilter, 
+    IF_USE_MEMORY {      
+        GET_DATA_FROM_MEMORY(COMMAND_ARGUMENT) = POPPED_VALUE;
     }
-    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
-        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = StackPop(procStack);
+    else IF_USE_REGISTER {
+        GET_DATA_FROM_REGISTER(GET_REGISTER_NUMBER) = POPPED_VALUE;
     }
     else
-        StackPop(procStack);
+        POPPED_VALUE;
 )
 
-DEF_CMD_(add, 8, 1,  
-    StackAdd(procStack);
+DEF_CMD_(add, 8, NoArgsFilter,  
+    STACK_ADD;
 )
 
-DEF_CMD_(jump, 9, (!(comArgs.argFlags.label)    || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)),
-
-    commandPointer = SIGNATURE_SIZE + argumentValue;
-    break;
+DEF_CMD_(jump, 9, JumpArgsFilter,
+    JUMP_TO(COMMAND_ARGUMENT);
 )
 
-DEF_CMD_(sub, 12, 1,  
-    StackSub(procStack);
+DEF_CMD_(sub, 12, NoArgsFilter,  
+    STACK_SUB;
 )
 
-DEF_CMD_(in, 13, (comArgs.argFlags.label) || 
-                (comArgs.argFlags.string) || 
-                (!((!(comArgs.argFlags.constant))   ||  (comArgs.argFlags.mem) || (comArgs.argFlags.reg))) || 
-                (!((  comArgs.argFlags.constant)    || !(comArgs.argFlags.mem) || (comArgs.argFlags.reg)))   || 
-                (!((!(comArgs.argFlags.constant))   ||  (comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
-    float scannedValue = 0;
-    
-    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
-        argumentValue /= ACCURACY;
-
-        ScanIn(&scannedValue);
-
-        *(int32_t*)(procStack->memory + argumentValue) = (int32_t)(scannedValue * ACCURACY);
+DEF_CMD_(in, 13, PopArgsFilter, 
+    IF_USE_MEMORY {
+        INPUT_SCAN;
+        GET_DATA_FROM_MEMORY(COMMAND_ARGUMENT) = SCANNED_VALUE;
     }
-    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
-        ScanIn(&scannedValue);
-
-        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int32_t)(scannedValue * ACCURACY);
+    else IF_USE_REGISTER {
+        INPUT_SCAN;
+        GET_DATA_FROM_REGISTER(GET_REGISTER_NUMBER) = SCANNED_VALUE;
     }
     else {
-        ScanIn(&scannedValue);
-
-        StackPush(procStack, (StackElem)(scannedValue * ACCURACY));
+        INPUT_SCAN;
+        PUSH_TO_STACK(SCANNED_VALUE);
     }
 )
 
-DEF_CMD_(mul, 16, 1, 
-    StackMul(procStack);
+DEF_CMD_(mul, 16, NoArgsFilter, 
+    STACK_MUL;
 )
 
-DEF_CMD_(ja, 17, (!(comArgs.argFlags.label)    || 
-                  (comArgs.argFlags.string)    || 
-                  (comArgs.argFlags.reg)  || 
-                  (comArgs.argFlags.mem)       || 
-                  (comArgs.argFlags.constant)), 
+DEF_CMD_(ja, 17, JumpArgsFilter, 
     IF_JUMP_(>)
 )
 
-DEF_CMD_(div, 20, 1, 
-    StackDiv(procStack);
+DEF_CMD_(div, 20, NoArgsFilter, 
+    STACK_DIV;
 )
 
-DEF_CMD_(jae, 21, (!(comArgs.argFlags.label)    || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
+DEF_CMD_(jae, 21, JumpArgsFilter, 
     IF_JUMP_(>=)
 )
 
-DEF_CMD_(out, 24, 1, 
-    StackOut(procStack);
+DEF_CMD_(out, 24, NoArgsFilter, 
+    STACK_OUT;
 )
 
-DEF_CMD_(jb, 25, (!(comArgs.argFlags.label)     || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
+DEF_CMD_(jb, 25, JumpArgsFilter, 
     IF_JUMP_(<)
 )
 
-DEF_CMD_(dump, 28, 1, 
-    StackDump(procStack LOCATION());
+DEF_CMD_(dump, 28, NoArgsFilter, 
+    STACK_DUMP;
 )
 
-DEF_CMD_(jbe, 29, (!(comArgs.argFlags.label)    || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
+DEF_CMD_(jbe, 29, JumpArgsFilter, 
     IF_JUMP_(<=)
 )
 
-DEF_CMD_(exeDump, 32, 1, 
-    StackExeDump(commands->buffer, commands->bufSize, commandPointer);
+DEF_CMD_(exeDump, 32, NoArgsFilter, 
+    STACK_EXE_DUMP;
 )
 
-DEF_CMD_(je, 33, (!(comArgs.argFlags.label)     || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
+DEF_CMD_(je, 33, JumpArgsFilter, 
     IF_JUMP_(==)
 )
 
@@ -172,98 +189,49 @@ DEF_CMD_(je, 33, (!(comArgs.argFlags.label)     ||
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 
-DEF_CMD_(jne, 37, (!(comArgs.argFlags.label)    || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
+DEF_CMD_(jne, 37, JumpArgsFilter, 
     IF_JUMP_(!=)
 )
 
-DEF_CMD_(mkwdw, 40, 1,  
-    int32_t yCoord = *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 4) / ACCURACY;
-    int32_t xCoord = *(StackElem*)(procStack->memory + BEGINNING_OF_GMEM - 8) / ACCURACY;
-
-    assert(yCoord > 0);
-    assert(xCoord > 0);
-
-    txCreateWindow(xCoord, yCoord);
+DEF_CMD_(mkwnd, 40, NoArgsFilter,  
+    CREATE_WINDOW(X_WINDOW, Y_WINDOW);
 )
 
-DEF_CMD_(call, 41, (!(comArgs.argFlags.label)   || 
-                    (comArgs.argFlags.string)   || 
-                    (comArgs.argFlags.reg) || 
-                    (comArgs.argFlags.mem)      || 
-                    (comArgs.argFlags.constant)), 
-    StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments);
-
-    commandPointer = SIGNATURE_SIZE + argumentValue;
-    break;
+DEF_CMD_(call, 41, JumpArgsFilter, 
+    REMEMBER_WHERE_TO_RETURN;
+    JUMP_TO(COMMAND_ARGUMENT);
 )
 
-DEF_CMD_(popbyte, 45, (comArgs.argFlags.string) || 
-                       (comArgs.argFlags.label) || 
-                       (!((!(comArgs.argFlags.constant)) ||   (comArgs.argFlags.mem) ||   (comArgs.argFlags.reg))) || 
-                       (!((comArgs.argFlags.constant)    ||  !(comArgs.argFlags.mem) ||   (comArgs.argFlags.reg))) || 
-                       ((!(comArgs.argFlags.constant))   || !((comArgs.argFlags.mem) || (!(comArgs.argFlags.reg)))), 
-    if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) {
-        argumentValue /= ACCURACY;
-        
-        *(procStack->memory + argumentValue) = (uint8_t)(StackPop(procStack) / ACCURACY);
+DEF_CMD_(popbyte, 45, PopArgsFilter, 
+    IF_USE_MEMORY {
+        GET_BYTE_FROM_MEMORY(COMMAND_ARGUMENT) = BYTE_POPPED_VALUE;
     }
-    else if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {
-        procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK] = (int8_t)(StackPop(procStack) / ACCURACY);
+    else IF_USE_REGISTER {
+        GET_DATA_FROM_REGISTER(GET_REGISTER_NUMBER) = BYTE_POPPED_VALUE;
     }
     else
-        StackPop(procStack);
+        POPPED_VALUE;
 )
 
-DEF_CMD_(ret, 44, 1, 
-    commandPointer = StackPop(retStack);
-    break;
+DEF_CMD_(ret, 44, NoArgsFilter, 
+    RETURN;
 )
 
-DEF_CMD_(froot, 48, 1, 
-    double root = StackPop(procStack) / ACCURACY;
-    root = sqrt(root);
-    StackPush(procStack, (StackElem)(root * ACCURACY));
+DEF_CMD_(froot, 48, NoArgsFilter, 
+    SQRT_FROM_STACK;
 )
 
-DEF_CMD_(strout, 49, (!(comArgs.argFlags.label)   || 
-                      (comArgs.argFlags.string)   || 
-                      (comArgs.argFlags.reg) || 
-                      (comArgs.argFlags.mem)      || 
-                      (comArgs.argFlags.constant)), 
-    StackPush(retStack, commandPointer + COMMAND_SIZE + sizeOfArguments);
-    commandPointer = SIGNATURE_SIZE + argumentValue + STRING_DIVIDER_SIZE;
-    char curChar = 0;
-
-    while ((curChar = commands->buffer[commandPointer]) != '$') {
-        putchar(curChar);
-        commandPointer++;
-    }
-    putchar('\n');
-
-    commandPointer = StackPop(retStack);
-    break;
+DEF_CMD_(strout, 49, JumpArgsFilter, 
+    STR_OUT(COMMAND_ARGUMENT);
 )
 
-DEF_CMD_(jumpDED, 53, (!(comArgs.argFlags.label)     || 
-                    (comArgs.argFlags.string)        || 
-                    (comArgs.argFlags.reg)      || 
-                    (comArgs.argFlags.mem)           || 
-                    (comArgs.argFlags.constant)), 
-    time_t curTimeSec = time(NULL);
-    struct tm *curTime = localtime(&curTimeSec);
-    printf("Today weeday is %d\n", curTime->tm_wday);
-    
-    if ((curTime->tm_wday == 1) || (curTime->tm_wday == 3) || (curTime->tm_wday == 5)) {
-        commandPointer = SIGNATURE_SIZE + argumentValue;
-        break;
+DEF_CMD_(jumpDED, 53, JumpArgsFilter, 
+    IF_TODAY_DED {
+        JUMP_TO(COMMAND_ARGUMENT);
     }
 )
 
-DEF_CMD_(hlt, 0, 1, 
+DEF_CMD_(hlt, 0, NoArgsFilter, 
 )
 
 #undef IF_JUMP_

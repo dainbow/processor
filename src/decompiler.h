@@ -22,14 +22,14 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
             decArgs.regName[0] = (char)((decArgs.bytesOfArgs & REG_NUM_MASK) + 'a');                                                \
             decArgs.regName[1] = 'x';                                                                                               \
                                                                                                                                     \
-            if (decArgs.bytesOfArgs & ((CONST_FLAG << SHIFT_OF_FLAGS) | (LABEL_FLAG << SHIFT_OF_FLAGS))) {                          \
-                if ((decArgs.bytesOfArgs & (LABEL_FLAG << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 0)) {                        \
+            if (decArgs.bytesOfArgs & ((1 << CONST_SHIFT << SHIFT_OF_FLAGS) | (1 << LABEL_SHIFT << SHIFT_OF_FLAGS))) {                          \
+                if ((decArgs.bytesOfArgs & (1 << LABEL_SHIFT << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 0)) {                        \
                     printf("TRYING TO READ LABEL AFTER JUMP\n");                                                                    \
                     labels.array[labels.curLbl].go = *((StackElem*)(input->buffer + commandPointer + 2));                             \
                     sprintf(labels.array[labels.curLbl].name, "l%u", labels.curLbl + 1);                                            \
                     labels.curLbl++;                                                                                                \
                 }                                                                                                                   \
-                else if ((decArgs.bytesOfArgs & (LABEL_FLAG << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 1)) {                   \
+                else if ((decArgs.bytesOfArgs & (1 << LABEL_SHIFT << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 1)) {                   \
                     int32_t foundedNum = 0;                                                                                         \
                     if ((foundedNum = FindLabelByCmdPtr(*(StackElem*)(input->buffer + commandPointer + 2), &labels)) != -1) {         \
                         sprintf(decArgs.numberToString, "%s", labels.array[foundedNum].name);                                       \
@@ -51,11 +51,11 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
                                                                                                                                     \
         fprintf(output, #cmdName " ");                                                                                              \
         fprintf(output, "%s%s %s %s%s\n",                                                                                           \
-        (decArgs.bytesOfArgs & (MEM_FLAG << SHIFT_OF_FLAGS)) ? "{" : "",                                                            \
-        (decArgs.bytesOfArgs & (REG_FLAG << SHIFT_OF_FLAGS)) ? decArgs.regName : "",                                                                \
-        ((decArgs.bytesOfArgs & (REG_FLAG << SHIFT_OF_FLAGS)) && (decArgs.bytesOfArgs & (CONST_FLAG << SHIFT_OF_FLAGS))) ? "+" : "",                \
-        (decArgs.bytesOfArgs & ((CONST_FLAG << SHIFT_OF_FLAGS) | (LABEL_FLAG << SHIFT_OF_FLAGS))) ? decArgs.numberToString : "",                    \
-        (decArgs.bytesOfArgs & (MEM_FLAG << SHIFT_OF_FLAGS)) ? "}" : "");                                                                           \
+        (decArgs.bytesOfArgs & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) ? "{" : "",                                                            \
+        (decArgs.bytesOfArgs & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) ? decArgs.regName : "",                                                                \
+        ((decArgs.bytesOfArgs & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) && (decArgs.bytesOfArgs & (1 << CONST_SHIFT << SHIFT_OF_FLAGS))) ? "+" : "",                \
+        (decArgs.bytesOfArgs & ((1 << CONST_SHIFT << SHIFT_OF_FLAGS) | (1 <<LABEL_SHIFT << SHIFT_OF_FLAGS))) ? decArgs.numberToString : "",                    \
+        (decArgs.bytesOfArgs & (1 << MEM_SHIFT << SHIFT_OF_FLAGS)) ? "}" : "");                                                                           \
                                                                                                                                                     \
         commandPointer += COMMAND_SIZE + decArgs.sizeOfArguments;                                                                                   \
         break;                                                                                                                                      \

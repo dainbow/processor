@@ -6,7 +6,10 @@ int main(int argc, char* argv[]) {
 
     Text commands = {};
     ReadCommands(argc, argv, &commands);
-    ExecuteCommands(&commands, &procStack, &retStack);
+    if (ExecuteCommands(&commands, &procStack, &retStack) == 0) {
+        fprintf(stderr, "ERROR IN EXECUTION\n");
+        abort();
+    }
 
     StackDtor(&procStack);
     StackDtor(&retStack);
@@ -21,7 +24,7 @@ void ReadCommands(int argc, char* argv[], Text* text) {
     ValidateSignature(text);
 }
 
-void ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack) {
+bool ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack) {
     assert(commands  != nullptr);
     assert(procStack != nullptr);
     assert(retStack  != nullptr);
@@ -36,10 +39,11 @@ void ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack) {
             default:
                 printf("UNKNOWN COMMAND %d ON %d POINTER PLACE\n", commands->buffer[commandPointer], commandPointer);
                 abort();
-                break;
+                return 0;
         }
     }
 
+    return 1;
     #undef DEF_CMD_
 }
 

@@ -53,31 +53,8 @@ const char* ShiftAndCheckArgs(String* string);
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer);
 StackElem FindLabelByName(char lblName[], Labels* labels);
 
-#define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, ...)                                                                                                \
-if (((currentString.firstSpaceIdx == strlen(#cmdName)) || (currentString.length == strlen(#cmdName)))                                               \
-& !MyStrCmp((const int8_t*)currentString.value, (const int8_t*)#cmdName)) {                                                                         \
-    printf("Command name: %s.\n", #cmdName);                                                                                                        \
-    ImmitCommand(cmdNum, &output);                                                                                                                  \
-                                                                                                                                                    \
-    if((cmdNum % MAX_COMMAND_TYPES) % 2) {                                                                                                          \
-        comArgs.argFlags.label = 1;                                                                                                       \
-        bool isLabel = !(cmdArgFilter);                                                                                                             \
-        comArgs.argFlags.label = 0;                                                                                                                 \
-                                                                                                                                                    \
-        comArgs.argFlags.string = 1;                                                                                                      \
-        bool isString = !(cmdArgFilter);                                                                                                            \
-        comArgs.argFlags.string = 0;                                                                                                                 \
-                                                                                                                                                    \
-        ParseArgs(&currentString, &comArgs, isLabel, isString);                                                                                     \
-                                                                                                                                                    \
-        printf("Arg? %u It is %d\nReg?%u It is %d\nIs to RAM? %u\nLabel is %s\nString is %s\n", comArgs.argFlags.constant, comArgs.argConst, comArgs.argFlags.reg, comArgs.argReg, comArgs.argFlags.mem, (comArgs.argFlags.label) ? comArgs.labelName : "NOLABEL", (comArgs.argFlags.string) ? comArgs.stringName : "NOSTRING");        \
-        if (cmdArgFilter) {                                                                                                                         \
-            fprintf(stderr, "INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                                   \
-            abort();                                                                                                                                \
-        }                                                                                                                                           \
-        ImmitArgs(cmdNum, &output, &comArgs, &labels, &currentString);                                                                              \
-    }                                                                                                                                               \
-    printf("CommandPointer is %llu\n", output.bytesCount);                                                                                          \
-}                                                                                                                                                   \
-else                                                                                                                                                \
-
+bool PushArgsFilter(Flags argFlags);
+bool DbArgsFilter(  Flags argFlags);
+bool PopArgsFilter( Flags argFlags);
+bool JumpArgsFilter(Flags argFlags);
+bool NoArgsFilter  (Flags argFlags);

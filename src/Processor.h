@@ -11,7 +11,7 @@
 #include "commands.h"
 
 void ReadCommands(int argc, char* argv[], Text* text);
-void ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack);
+bool ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack);
 void ValidateSignature(Text* text);
 
 //This define calculates shift of command pointer, execute code and shifts
