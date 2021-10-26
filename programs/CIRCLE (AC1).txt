@@ -12,7 +12,6 @@ pop bx ;currentYcoord
 strout Window
 in {dx + -8};max X of window             dx + -8
 in {dx + -4};max Y of window             dx + -4
-mkwnd
 
 strout Coords
 in {dx + -16} ;x cord of circle center   dx + -16
@@ -24,6 +23,8 @@ in {dx + -20} ;radius of circle          dx + -20
 call PrintCircle
 push -1
 popbyte {cx}
+
+mkwnd
 drwpc
 hlt
 
@@ -62,6 +63,8 @@ fory:
     push bx
     push {dx + -4}
     jb fory
+    push bx
+    out
 ret
 
 GetXSqPlusYSq:

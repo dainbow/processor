@@ -22,6 +22,9 @@ void Decompile(Text* input, char* outputfile) {
     static uint32_t NUM_OF_DECOMPILING = 1;
 
     static Labels labels = {};
+    if (labels.isAllDataRead == 0) {
+        FillLabelsPoison(&labels);
+    }
     
     if (NUM_OF_DECOMPILING > 1) {
         labels.isAllDataRead = 1;
@@ -31,7 +34,7 @@ void Decompile(Text* input, char* outputfile) {
         printf("Now decompiling %u command\n", commandPointer);
         switch (input->buffer[commandPointer]) {
             #include "cmd_def.h"
-            case 36: {//! $ That points on the beginning of string storing
+            case 36: { //! $ That points on the beginning of string storing
                 int32_t foundedNum = 0;
                 if ((labels.isAllDataRead == 1) && (foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1) {      \
                     fprintf(output, "%s:\n", labels.array[foundedNum].name);                                                                \
@@ -68,7 +71,7 @@ void Decompile(Text* input, char* outputfile) {
 int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels) {
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) && (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         if(cmdPtr == labels->array[curLbl].go) {
-            printf("Label %s goes to %ld ip(Its number's %u)\n", labels->array[curLbl].name, labels->array[curLbl].go, curLbl);
+            printf("Label %s goes to %I64d ip(Its number's %u)\n", labels->array[curLbl].decName, labels->array[curLbl].go, curLbl);
 
             return curLbl;
         }

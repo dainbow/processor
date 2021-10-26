@@ -84,6 +84,8 @@
 
 #define DISPLAY_GMEMORY                                                                                            \
     int32_t maxX = txGetExtentX();                                                                               \
+    printf("X of window is %d\n", maxX); \
+    printf("Y of window is %d\n", txGetExtentY());\
     for (uint32_t curPixel = 0; *(procStack->memory + BEGINNING_OF_GMEM + curPixel) != -1; curPixel += 3) {      \
         COLORREF curColor = RGB(*(procStack->memory + BEGINNING_OF_GMEM + curPixel),                             \
                                 *(procStack->memory + BEGINNING_OF_GMEM + curPixel + 1),                         \
@@ -194,6 +196,8 @@ DEF_CMD_(jne, 37, JumpArgsFilter,
 )
 
 DEF_CMD_(mkwnd, 40, NoArgsFilter,  
+    _txWindowStyle |= WS_THICKFRAME;
+    _txConsole = -1;
     CREATE_WINDOW(X_WINDOW, Y_WINDOW);
 )
 

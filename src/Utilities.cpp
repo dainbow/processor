@@ -89,3 +89,9 @@ size_t strLenWithoutSpaces(char* countingString) {
 
     return counter;
 }
+
+void FillLabelsPoison(Labels* labels) {
+    for (uint32_t curLbl = 0; curLbl < MAX_LABEL_AMOUNT; curLbl++) {
+        labels->array[curLbl].go = -1;
+    }
+}

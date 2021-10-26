@@ -1,5 +1,27 @@
 #include "Processor.h"
 
+#define DEF_CMD_(cmdName, cmdNum, cmdArgFilter, cmdCode)                                                                    \
+case CMD_##cmdName: {                                                                                                       \
+    uint32_t sizeOfArguments = 0;                                                                                           \
+    StackElem argumentValue  = 0;                                                                                           \
+    if (cmdNum % MAX_COMMAND_TYPES % 2) {                                                                                   \
+        sizeOfArguments += BYTE_OF_ARGS;                                                                                    \
+        if (commands->buffer[commandPointer + 1] & ((1 << CONST_SHIFT << SHIFT_OF_FLAGS) | (1 << LABEL_SHIFT << SHIFT_OF_FLAGS))) {     \
+            sizeOfArguments += CONST_ARGUMENT_SIZE;                                                                         \
+            argumentValue   += *(StackElem*)(commands->buffer + commandPointer + 2);                                        \
+        }                                                                                                                   \
+                                                                                                                            \
+        if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS)) {                                    \
+            argumentValue += procStack->regs[commands->buffer[commandPointer + 1] & REG_NUM_MASK];                          \
+        }                                                                                                                   \
+    }                                                                                                                       \
+                                                                                                                            \
+    cmdCode                                                                                                                 \
+                                                                                                                            \
+    commandPointer += COMMAND_SIZE + sizeOfArguments;                                                                       \
+    break;                                                                                                                  \
+}
+
 int main(int argc, char* argv[]) {
     StackCtor(procStack);
     StackCtor(retStack);   //Stack for return positions of functions
@@ -29,7 +51,7 @@ bool ExecuteCommands(Text* commands, Stack* procStack, Stack* retStack) {
     assert(procStack != nullptr);
     assert(retStack  != nullptr);
 
-    procStack->memory            = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(procStack->memory[0]));
+    procStack->memory        = (int8_t*)calloc(MAX_MEMORY_SIZE, sizeof(procStack->memory[0]));
     StackElem commandPointer = SIGNATURE_SIZE;
 
     while(commands->buffer[commandPointer] != 0) {

@@ -38,12 +38,12 @@ void Compile(Text* text, const char* outName);
 void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString);
 bool ProcessCommands(const Command* curCommand, String* curString, CompileResult* output);
 
-void ParseBrackets(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
-void ParseRegister(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
-void ParseConst(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
+void ParseBrackets(   const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
+void ParseRegister(   const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
+void ParseConst(      const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
-void ParseLabel(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
-void ParseString(const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
+void ParseLabel(      const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
+void ParseString(     const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 
 void ImmitCommand(int32_t cmdNum, CompileResult* output);
 void ImmitArgs(   int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString);
@@ -52,7 +52,6 @@ const char* ShiftAndCheckArgs(String* string);
 
 bool IfLabel(String* string, Labels* labels, size_t curCommandPointer);
 StackElem FindLabelByName(char lblName[], Labels* labels);
-void FillLabelsPoison(Labels* labels);
 
 bool PushArgsFilter(Flags argFlags);
 bool DbArgsFilter(  Flags argFlags);

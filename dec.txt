@@ -1,7 +1,3 @@
-push   7.000000
-push   12.000000
-strout   l1
-out   
-hlt   
-l1:
-db $CASH$
+in ax  
+in bx  
+in cx  

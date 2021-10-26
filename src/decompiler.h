@@ -26,7 +26,8 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
                 if ((decArgs.bytesOfArgs & (1 << LABEL_SHIFT << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 0)) {                        \
                     printf("TRYING TO READ LABEL AFTER JUMP\n");                                                                    \
                     labels.array[labels.curLbl].go = *((StackElem*)(input->buffer + commandPointer + 2));                             \
-                    sprintf(labels.array[labels.curLbl].name, "l%u", labels.curLbl + 1);                                            \
+                    sprintf(labels.array[labels.curLbl].decName, "l%u", labels.curLbl + 1);                                            \
+                    printf("Scanned label %s\n", labels.array[labels.curLbl].decName); \
                     labels.curLbl++;                                                                                                \
                 }                                                                                                                   \
                 else if ((decArgs.bytesOfArgs & (1 << LABEL_SHIFT << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 1)) {                   \
@@ -46,7 +47,7 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
                                                                                                                                     \
         int32_t foundedNum = 0;                                                                                                     \
         if ((labels.isAllDataRead == 1) && (foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1) {      \
-            fprintf(output, "%s:\n", labels.array[foundedNum].name);                                                                \
+            fprintf(output, "%s:\n", labels.array[foundedNum].decName);                                                             \
         }                                                                                                                           \
                                                                                                                                     \
         fprintf(output, #cmdName " ");                                                                                              \

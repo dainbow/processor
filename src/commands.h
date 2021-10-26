@@ -29,19 +29,22 @@ const int32_t BRACKET_BUFFER_SIZE   = 10;
 const int32_t TRASH_BUFFER_SIZE     = 100;
 const int32_t BRACKETS_SIZE         = 2;
 
-const char SIGNATURE[] = "DAIN7"; 
+const char SIGNATURE[]    = "DAIN7"; 
 const char STRING_DIVIDER = '$';
 
 const int32_t SHIFT_OF_FLAGS = 3;
 const int32_t MEM_SHIFT      = 0;
+
 const int32_t REG_SHIFT      = 1;
 const int32_t CONST_SHIFT    = 2;
 const int32_t LABEL_SHIFT    = 3;
 const int32_t STRING_SHIFT   = 4;
+
 const int32_t REG_NUM_MASK   = (1) | (1 << 1) | (1 << 2);
 
 struct Label {
     uint8_t* name;
+    char decName[MAX_LABEL_NAME];
     int64_t go;
 };
 
@@ -54,6 +57,8 @@ struct Labels {
 enum Commands {
     #include "cmd_def.h"
 };
+
+void FillLabelsPoison(Labels* labels);
 
 #undef DEF_CMD_
 #endif
