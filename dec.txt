@@ -1,3 +1,12 @@
-in ax  
-in bx  
-in cx  
+push   7.000000
+push   12.000000
+jumpDED   l1
+strout   l2
+hlt   
+l1:
+strout   l3
+hlt   
+l2:
+db $Ded lesson not today, it's very bad$
+l3:
+db $DED LESSON TODAY YEAAAAH$

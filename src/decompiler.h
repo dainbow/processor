@@ -33,7 +33,7 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
                 else if ((decArgs.bytesOfArgs & (1 << LABEL_SHIFT << SHIFT_OF_FLAGS)) && (labels.isAllDataRead == 1)) {                   \
                     int32_t foundedNum = 0;                                                                                         \
                     if ((foundedNum = FindLabelByCmdPtr(*(StackElem*)(input->buffer + commandPointer + 2), &labels)) != -1) {         \
-                        sprintf(decArgs.numberToString, "%s", labels.array[foundedNum].name);                                       \
+                        sprintf(decArgs.numberToString, "%s", labels.array[foundedNum].decName);                                       \
                     }                                                                                                               \
                     else {                                                                                                          \
                         assert(FAIL && "LABEL NOT FOUND");                                                                          \
@@ -46,7 +46,7 @@ int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels);
         }                                                                                                                           \
                                                                                                                                     \
         int32_t foundedNum = 0;                                                                                                     \
-        if ((labels.isAllDataRead == 1) && (foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1) {      \
+        if ((labels.isAllDataRead == 1) && ((foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1)) {      \
             fprintf(output, "%s:\n", labels.array[foundedNum].decName);                                                             \
         }                                                                                                                           \
                                                                                                                                     \
