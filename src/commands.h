@@ -8,7 +8,6 @@
 
 const int32_t COMMAND_SIZE          = 1;
 const int32_t CONST_ARGUMENT_SIZE   = 4;
-const int32_t MAX_COMMAND_TYPES     = 4;
 const int32_t MAX_FILE_SIZE         = 100;
 const int32_t ACCURACY              = 10;
 const int32_t SIGNATURE_SIZE        = 5;
@@ -29,6 +28,10 @@ const int32_t BRACKET_BUFFER_SIZE   = 10;
 const int32_t TRASH_BUFFER_SIZE     = 100;
 const int32_t BRACKETS_SIZE         = 2;
 
+const int32_t ARGUMENT_TYPE_MASK     = 1;
+const int32_t PREPROCESSOR_TYPE_MASK = 2;
+const int32_t COMMAND_NUMBER_SHIFT   = 2;
+
 const char SIGNATURE[]    = "DAIN7"; 
 const char STRING_DIVIDER = '$';
 
@@ -44,10 +47,10 @@ const int32_t REG_NUM_MASK   = (1) | (1 << 1) | (1 << 2);
 
 struct Label {
     uint8_t* name;
-    char decName[MAX_LABEL_NAME];
     int64_t go;
 };
 
+//TODO: Название метки по смещению
 struct Labels {
     Label array[MAX_LABEL_AMOUNT];
     uint32_t curLbl;

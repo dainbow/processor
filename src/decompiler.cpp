@@ -37,7 +37,7 @@ void Decompile(Text* input, char* outputfile) {
             case 36: { //! $ That points on the beginning of string storing
                 int32_t foundedNum = 0;
                 if ((labels.isAllDataRead == 1) && (foundedNum = FindLabelByCmdPtr(commandPointer - SIGNATURE_SIZE, &labels)) != -1) {      
-                    fprintf(output, "%s:\n", labels.array[foundedNum].decName);                                                                
+                    fprintf(output, "l%I64d:\n", labels.array[foundedNum].go);                                                                
                 }
 
                 commandPointer++;
@@ -69,12 +69,12 @@ void Decompile(Text* input, char* outputfile) {
 }
 
 int32_t FindLabelByCmdPtr(int32_t cmdPtr, Labels* labels) {
+    printf("FINDING LABELS\n");
+    
     for (uint32_t curLbl = 0; (labels->array[curLbl].go != -1) && (curLbl < MAX_LABEL_AMOUNT); curLbl++) {
         printf("%u label goes to %I64d\n", curLbl, labels->array[curLbl].go);
         
-        if(cmdPtr == labels->array[curLbl].go) {
-            printf("Label %s goes to %I64d ip(Its number's %u)\n", labels->array[curLbl].decName, labels->array[curLbl].go, curLbl);
-
+        if (cmdPtr == labels->array[curLbl].go) {
             return curLbl;
         }
     }

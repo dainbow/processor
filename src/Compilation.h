@@ -45,8 +45,8 @@ void ParseSeveralArgs(const char* ptrToArgs, Arguments* comArg, size_t* sumLenAr
 void ParseLabel(      const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 void ParseString(     const char* ptrToArgs, Arguments* comArg, size_t* sumLenArgs);
 
-void ImmitCommand(int32_t cmdNum, CompileResult* output);
-void ImmitArgs(   int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString);
+void EmitCommand(int32_t cmdNum, CompileResult* output);
+void EmitArgs(   int32_t cmdNum, CompileResult* output, Arguments* comArgs, Labels* labels, String* currentString);
 
 const char* ShiftAndCheckArgs(String* string);
 

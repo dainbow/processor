@@ -1,11 +1,13 @@
 //! DON'T USE 36 COMMAND NUMBER - IT IS USED TO STORE STRINGS
 
-//! Choose new command number correctly: cmdNum % (amount of command types) means:
-//! 0 - processor command without arguments
-//! 1 - processor command with arguments
-//! 2 - assembler command without arguments
-//! 3 - assembler command with argument
-
+//! Command code (8 bit) format: 
+//!      
+//!      76543210
+//!      nnnnnnPA, where: 
+//!
+//! nnnnnn - command code number,
+//! P - preprocessor phase flag,
+//! A - command with argument flag. 
 
 //This define helps to easily make if jumps
 #define IF_JUMP_(symbol)                                    \
@@ -229,11 +231,17 @@ DEF_CMD_(strout, 49, JumpArgsFilter,
     STR_OUT(COMMAND_ARGUMENT);
 )
 
+DEF_CMD_(meow, 52, NoArgsFilter,
+    printf("Meow\n");
+)
+
 DEF_CMD_(jumpDED, 53, JumpArgsFilter, 
     IF_TODAY_DED {
         JUMP_TO(COMMAND_ARGUMENT);
     }
 )
+
+
 
 DEF_CMD_(hlt, 0, NoArgsFilter, 
 )

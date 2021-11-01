@@ -1,12 +1,105 @@
-push   7.000000
-push   12.000000
-jumpDED   l1
-strout   l2
+push   1000.000000
+pop cx  
+push cx  
+pop dx  
+push   0.000000
+pop ax  
+push   0.000000
+pop bx  
+strout   
+in {dx + -8.000000}
+in {dx + -4.000000}
+strout   
+in {dx + -16.000000}
+in {dx + -12.000000}
+strout   
+in {dx + -20.000000}
+call   
+push   -1.000000
+popbyte {cx  }
+mkwnd   
+drwpc   
 hlt   
-l1:
-strout   l3
-hlt   
-l2:
-db $Ded lesson not today, it's very bad$
-l3:
-db $DED LESSON TODAY YEAAAAH$
+push cx  
+push   1.000000
+add   
+pop cx  
+ret   
+push   0.000000
+pop ax  
+call   
+call   
+jbe   
+call   
+call   
+jae   
+call   
+jump   
+call   
+call   
+push ax  
+push {dx + -8.000000}
+jb   
+call   
+push bx  
+push {dx + -4.000000}
+jb   
+push bx  
+out   
+ret   
+push bx  
+push {dx + -12.000000}
+sub   
+push bx  
+push {dx + -12.000000}
+sub   
+mul   
+push ax  
+push {dx + -16.000000}
+sub   
+push ax  
+push {dx + -16.000000}
+sub   
+mul   
+add   
+ret   
+push {dx + -20.000000}
+push {dx + -20.000000}
+mul   
+ret   
+push {dx + -20.000000}
+push {dx + -20.000000}
+push   1.200000
+mul   
+mul   
+ret   
+push bx  
+push   1.000000
+add   
+pop bx  
+ret   
+push ax  
+push   1.000000
+add   
+pop ax  
+ret   
+push   173.000000
+popbyte {cx  }
+call   
+push   255.000000
+popbyte {cx  }
+call   
+push   47.000000
+popbyte {cx  }
+call   
+ret   
+push   139.000000
+popbyte {cx  }
+call   
+push   0.000000
+popbyte {cx  }
+call   
+push   0.000000
+popbyte {cx  }
+call   
+ret   
