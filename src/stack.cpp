@@ -83,6 +83,7 @@ StackElem StackPop(Stack* stack) {
     StackElem poppedValue = *(StackElem*)(stack->data + stack->size * sizeof(StackElem));
     *(StackElem*)(stack->data + stack->size * sizeof(StackElem)) = POISON;
 
+
     #if (STACK_DEBUG >= HIGH_LEVEL)
         WriteAllStackHash(stack);
     #endif
@@ -385,7 +386,6 @@ void StackAdd(Stack* stack) {
     StackElem firstSummand  = StackPop(stack);
     StackElem secondSummand = StackPop(stack); 
 
-    //printf("Pushed add result %d\n", firstSummand + secondSummand);
     StackPush(stack, firstSummand + secondSummand);
 }
 
@@ -401,30 +401,48 @@ void StackSub(Stack* stack) {
 void StackMul(Stack* stack) {
     CheckAllStack(stack);
 
-    StackElem firstMult  = StackPop(stack);
-    StackElem secondMult = StackPop(stack);
+    double firstMult  = (double)StackPop(stack) / ACCURACY;
+    double secondMult = (double)StackPop(stack) / ACCURACY;
 
-    StackPush(stack, firstMult * secondMult / ACCURACY);
+    double result = firstMult * secondMult;
+    StackPush(stack, (StackElem)(result * ACCURACY));
 }
 
 void StackDiv(Stack* stack) {
     CheckAllStack(stack);
 
-    StackElem divider = StackPop(stack);
-    StackElem divisible   = StackPop(stack);
-
-    StackPush(stack, divisible / divider * ACCURACY);
+    double divider     = (double)StackPop(stack) / ACCURACY;
+    double divisible   = (double)StackPop(stack) / ACCURACY;
+    
+    double result = divisible / divider;
+    StackPush(stack, (StackElem)(result * ACCURACY));
 }
 
-void StackOut(Stack* stack) {
+void StackOut(Stack* stack, int32_t amount) {
     CheckAllStack(stack);
 
-    for (int32_t curIdx = stack->size; curIdx > 0; curIdx--) {
+    amount /= ACCURACY;
+    if (amount == 0) {
+        amount = stack->size;
+    }
+
+    for (int32_t curIdx = amount; curIdx > 0; curIdx--) {
         double printOut = (double)StackPop(stack);
         printOut /= ACCURACY;
 
         printf("[%d]: %f\n", curIdx, printOut);
     }
+}
+
+void StackPow(Stack* stack) {
+    CheckAllStack(stack);
+
+    double power = (double)StackPop(stack) / ACCURACY;
+    double base  = (double)StackPop(stack) / ACCURACY;
+
+    int32_t answer = (StackElem)(pow(base, power) * ACCURACY);
+
+    StackPush(stack, answer);
 }
 
 void StackExeDump(uint8_t* buffer, uint64_t bufSize, StackElem comPtr) {

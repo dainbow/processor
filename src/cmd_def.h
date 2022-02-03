@@ -20,6 +20,7 @@
 
 #define IF_USE_MEMORY   if (commands->buffer[commandPointer + 1] & (1 << MEM_SHIFT << SHIFT_OF_FLAGS))
 #define IF_USE_REGISTER if (commands->buffer[commandPointer + 1] & (1 << REG_SHIFT << SHIFT_OF_FLAGS))
+#define IF_USE_CONSTANT if (commands->buffer[commandPointer + 1] & (1 << CONST_SHIFT << SHIFT_OF_FLAGS))
 
 #define COMMAND_ARGUMENT argumentValue
 
@@ -35,7 +36,9 @@
 #define STACK_SUB      StackSub(procStack)
 #define STACK_MUL      StackMul(procStack)
 #define STACK_DIV      StackDiv(procStack)
-#define STACK_OUT      StackOut(procStack)
+#define STACK_POW      StackPow(procStack)
+
+#define STACK_OUT(amount)      StackOut(procStack, amount)
 #define STACK_DUMP     StackDump(procStack LOCATION())
 #define STACK_EXE_DUMP StackExeDump(commands->buffer, commands->bufSize, commandPointer)
 
@@ -48,7 +51,7 @@
 
 #define STR_OUT(STRING_ADRESS)                                                  \
     REMEMBER_WHERE_TO_RETURN;                                                    \
-    commandPointer = SIGNATURE_SIZE + STRING_ADRESS + STRING_DIVIDER_SIZE;      \
+    commandPointer = SIGNATURE_SIZE + STRING_ADRESS + STRING_DIVIDER_SIZE + 1;      \
     char curChar = 0;                                                           \
                                                                                 \
     while ((curChar = commands->buffer[commandPointer]) != '$') {               \
@@ -165,10 +168,6 @@ DEF_CMD_(jae, 21, JumpArgsFilter,
     IF_JUMP_(>=)
 )
 
-DEF_CMD_(out, 24, NoArgsFilter, 
-    STACK_OUT;
-)
-
 DEF_CMD_(jb, 25, JumpArgsFilter, 
     IF_JUMP_(<)
 )
@@ -231,8 +230,8 @@ DEF_CMD_(strout, 49, JumpArgsFilter,
     STR_OUT(COMMAND_ARGUMENT);
 )
 
-DEF_CMD_(meow, 52, NoArgsFilter,
-    printf("Meow\n");
+DEF_CMD_(pow, 52, NoArgsFilter,
+    STACK_POW;
 )
 
 DEF_CMD_(jumpDED, 53, JumpArgsFilter, 
@@ -241,7 +240,20 @@ DEF_CMD_(jumpDED, 53, JumpArgsFilter,
     }
 )
 
-
+DEF_CMD_(out, 57, OutArgsFilter, 
+    IF_USE_MEMORY {
+        STACK_OUT(COMMAND_ARGUMENT);
+    }
+    else IF_USE_REGISTER {
+        STACK_OUT(COMMAND_ARGUMENT);
+    }
+    else IF_USE_CONSTANT {
+        STACK_OUT(COMMAND_ARGUMENT); 
+    }
+    else {
+        STACK_OUT(-1);
+    }
+)
 
 DEF_CMD_(hlt, 0, NoArgsFilter, 
 )

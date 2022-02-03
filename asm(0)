@@ -1,0 +1,57 @@
+jump main
+fact:
+pop {bx + 0}
+push {bx + 0}
+push 1.000000
+push 1
+add
+sub
+push 0
+jb compareg0
+push 0
+jump comparezero0
+compareg0:
+push 1
+comparezero0:
+push 0
+je ifend0
+push 1.000000
+ret
+ifend0:
+push {bx + 0}
+push {bx + 0}
+push 1.000000
+sub
+push 4
+push bx
+add
+pop bx
+call fact
+push bx
+push 4
+sub
+pop bx
+mul
+ret
+main:
+push 0.000000
+pop {bx + 0}
+push 5.000000
+push 4
+push bx
+add
+pop bx
+call fact
+push bx
+push 4
+sub
+pop bx
+pop {bx + 0}
+strout str0
+push {bx + 0}
+out 1
+hlt
+
+str0:
+db "$Factorial of 5 is$"
+

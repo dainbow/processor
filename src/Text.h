@@ -17,7 +17,7 @@ struct String {
 };
 
 struct Text {
-    struct String *strings;
+    String *strings;
     uint8_t *buffer;
     size_t bufSize;
     uint32_t strAmount;

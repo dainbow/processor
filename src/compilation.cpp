@@ -22,7 +22,8 @@ if (((currentString.firstSpaceIdx == strlen(#cmdName)) || (currentString.length 
                (comArgs.argFlags.label) ? comArgs.labelName : "NOLABEL",                                                                            \
                (comArgs.argFlags.string) ? comArgs.stringName : "NOSTRING");                                                                        \
         if (cmdArgFilter(comArgs.argFlags) == 0) {                                                                                                 \
-            fprintf(stderr, "INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE", #cmdName, curString);                                                   \
+            fprintf(stderr, "INCORRECT ARGUMENT FOR %s COMMAND AT %u LINE (%u, %u, %u, %u, %u)", #cmdName, curString,                                                 \
+            comArgs.argFlags.string, comArgs.argFlags.label, comArgs.argFlags.constant, comArgs.argFlags.reg, comArgs.argFlags.mem);                \
             abort();                                                                                                                                \
         }                                                                                                                                           \
         EmitArgs(cmdNum, &output, &comArgs, &labels, &currentString);                                                                              \
@@ -82,7 +83,7 @@ void Compile(Text* text, const char* outName) {
     FILE* outputd = fopen(outName, "wb");
     printf("I wrote %llu signature bytes\n",  fwrite(SIGNATURE, 1, SIGNATURE_SIZE, outputd));
     printf("I wrote %llu bytes from array\n---------END OF %u COMPILING-------\n", fwrite(output.bytesArray, 1, output.bytesCount, outputd), NUM_OF_COMPILING);
-
+    
     fclose(outputd);
     free(output.bytesArray);
     NUM_OF_COMPILING++;
@@ -110,7 +111,7 @@ void ParseArgs(String* string, Arguments* comArg, bool isLabel, bool isString) {
         fprintf(stderr, "I have parsed %llu nonspace chars\n"
                "I should got  %llu as sum of lengths\n", sumLenArgs, string->lenOfArgs);
 
-        assert(FAIL && "SOME ARGUMENTS ARE SUBSTRINGS OF ANOTHER STRINGS");
+        //assert(FAIL && "SOME ARGUMENTS ARE SUBSTRINGS OF ANOTHER STRINGS");
     }
 }
 
@@ -263,7 +264,7 @@ const char* ShiftAndCheckArgs(String* string) {   //Shifts beginning of string t
     char trashLetters[TRASH_BUFFER_SIZE] = "";
     const char* ptrToArgs = (const char*)string->value + string->lastSpaceBeforeArgs;
     
-    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9.+-\"\"!,$']", trashLetters) & 
+    if(sscanf(ptrToArgs, "%[ {}a-zA-Zx0-9:.+-\"\"!,$']", trashLetters) & 
       (strlen(trashLetters) != string->length - string->lastSpaceBeforeArgs)) {
         assert(FAIL && "UNKNOWN LETTERS IN ARGUMENT");
     }
@@ -403,8 +404,7 @@ bool PopArgsFilter(Flags argFlags) {
     if ((  argFlags.label)  || 
         (  argFlags.string) || 
         (( argFlags.constant)   &&  (!argFlags.mem)   &&  (!argFlags.reg))  || 
-        ((!argFlags.constant)   &&   (argFlags.mem)   &&  (!argFlags.reg))  || 
-        ((!argFlags.constant)   &&  (!argFlags.mem)   &&  (!argFlags.reg)))
+        ((!argFlags.constant)   &&   (argFlags.mem)   &&  (!argFlags.reg)))
         return 0;
     return 1;
 }
@@ -416,6 +416,13 @@ bool JumpArgsFilter(Flags argFlags) {
          (argFlags.mem)       || 
          (argFlags.constant))
         return 0;
+    return 1;
+}
+
+bool OutArgsFilter (Flags argFlags) {
+    if ((argFlags.label)  || 
+        (argFlags.string))
+       return 0;
     return 1;
 }
 

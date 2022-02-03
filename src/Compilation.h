@@ -57,4 +57,5 @@ bool PushArgsFilter(Flags argFlags);
 bool DbArgsFilter(  Flags argFlags);
 bool PopArgsFilter( Flags argFlags);
 bool JumpArgsFilter(Flags argFlags);
+bool OutArgsFilter (Flags argFlags);
 bool NoArgsFilter  (Flags argFlags);

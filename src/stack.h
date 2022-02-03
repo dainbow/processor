@@ -333,6 +333,8 @@ void StackMul(Stack* stack);
 
 void StackDiv(Stack* stack);
 
-void StackOut(Stack* stack);
+void StackOut(Stack* stack, int32_t amount);
+
+void StackPow(Stack* stack);
 
 void StackExeDump(uint8_t* buffer, uint64_t bufSize, StackElem comPtr);

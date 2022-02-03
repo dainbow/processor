@@ -20,7 +20,7 @@ const int32_t MAX_NUMBER_SIZE       = 400;
 const int32_t MAX_REG_NAME          = 3;
 const int32_t MAX_LABEL_NAME        = 100;
 const int32_t MAX_LABEL_AMOUNT      = 70;
-const int32_t BEGINNING_OF_GMEM     = 1000;
+const int32_t BEGINNING_OF_GMEM     = 500000;
 const int32_t MAX_STRING_NAME       = 100;
 const int32_t STRING_DIVIDER_SIZE   = 1;
 const int32_t QUOTE_SIZE            = 1;
@@ -43,6 +43,8 @@ const int32_t CONST_SHIFT    = 2;
 const int32_t LABEL_SHIFT    = 3;
 const int32_t STRING_SHIFT   = 4;
 
+const int32_t MAX_COMMAND_TYPES = 4;
+
 const int32_t REG_NUM_MASK   = (1) | (1 << 1) | (1 << 2);
 
 struct Label {
@@ -50,7 +52,6 @@ struct Label {
     int64_t go;
 };
 
-//TODO: Название метки по смещению
 struct Labels {
     Label array[MAX_LABEL_AMOUNT];
     uint32_t curLbl;
